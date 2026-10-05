@@ -1,6 +1,7 @@
 import type { PropertyValue } from './batch.js';
 
-export const RESERVED_EVENT_NAMES: readonly string[] = ['page_view', 'identify', 'api_request'];
+export const IDENTIFY_EVENT = 'identify';
+export const RESERVED_EVENT_NAMES: readonly string[] = ['page_view', IDENTIFY_EVENT, 'api_request'];
 export const MAX_PROPERTIES = 10;
 export const MAX_PROPERTY_STRING_LENGTH = 100;
 

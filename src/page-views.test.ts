@@ -11,6 +11,8 @@ function setup(referrer = 'https://www.google.com/') {
   const enqueued: EventInput[] = [];
   const tracker: Tracker = {
     enqueue: (input) => enqueued.push(input),
+    identify: vi.fn(),
+    reset: vi.fn(),
     flush: vi.fn(),
     dispose: vi.fn(),
   };
