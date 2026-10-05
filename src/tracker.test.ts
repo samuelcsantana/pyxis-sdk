@@ -176,6 +176,63 @@ describe('createTracker', () => {
     expect(sent[0]?.batch.events[1]?.attribution).toEqual(entryAttribution);
   });
 
+  it('identifies the visit once per user, and every later event carries the user', () => {
+    const { tracker, sent } = setup();
+
+    tracker.enqueue({ name: 'page_view', path: '/' });
+    tracker.identify('user_42', '/dashboard');
+    tracker.identify('user_42', '/dashboard');
+    tracker.enqueue({ name: 'plan_selected', path: '/dashboard' });
+    tracker.flush();
+
+    expect(
+      sent[0]?.batch.events.map(({ name, path, user_id }) => ({ name, path, user_id })),
+    ).toEqual([
+      { name: 'page_view', path: '/', user_id: undefined },
+      { name: 'identify', path: '/dashboard', user_id: 'user_42' },
+      { name: 'plan_selected', path: '/dashboard', user_id: 'user_42' },
+    ]);
+    expect(new Set(sent[0]?.batch.events.map((event) => event.session_id)).size).toBe(1);
+  });
+
+  it('identifies again when another user signs in on the same visit', () => {
+    const { tracker, sent } = setup();
+
+    tracker.identify('user_42', '/');
+    tracker.identify('user_7', '/');
+    tracker.flush();
+
+    expect(sent[0]?.batch.events.map((event) => event.user_id)).toEqual(['user_42', 'user_7']);
+  });
+
+  it('sends what is queued with the old user on reset, then starts an anonymous visit', () => {
+    const { tracker, sent } = setup();
+    tracker.identify('user_42', '/');
+    tracker.enqueue({ name: 'logout_clicked', path: '/settings' });
+
+    tracker.reset();
+    tracker.enqueue({ name: 'page_view', path: '/' });
+    tracker.flush();
+
+    expect(sent).toHaveLength(2);
+    const before = sent[0]?.batch.events ?? [];
+    const after = sent[1]?.batch.events[0];
+    expect(before.map((event) => event.user_id)).toEqual(['user_42', 'user_42']);
+    expect(after?.user_id).toBeUndefined();
+    expect(after?.session_id).not.toBe(before[0]?.session_id);
+  });
+
+  it('does nothing on identify or reset once disposed', () => {
+    const { tracker, sent, sessionStore } = setup();
+    tracker.dispose();
+
+    tracker.identify('user_42', '/');
+    tracker.reset();
+
+    expect(sent).toHaveLength(0);
+    expect(sessionStore.read(SESSION_KEY)).toBeNull();
+  });
+
   it('keeps the visit while active and starts a new one after 30 minutes idle', async () => {
     const { tracker, sent, sessionStore } = setup();
 

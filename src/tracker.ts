@@ -9,6 +9,7 @@ import {
   serializeBatch,
 } from './core/batch.js';
 import { chunkEvents, enqueue, FLUSH_DELAY_MS, shouldFlushNow } from './core/batch-policy.js';
+import { IDENTIFY_EVENT } from './core/event-input.js';
 import type { ResolvedOptions } from './core/options.js';
 import { judgeOutcome, retryDelay, type SendOutcome } from './core/retry-policy.js';
 import {
@@ -38,6 +39,8 @@ export interface EventInput {
 
 export interface Tracker {
   enqueue(input: EventInput): void;
+  identify(userId: string, path: string): void;
+  reset(): void;
   flush(pageHidden?: boolean): void;
   dispose(): void;
 }
@@ -122,32 +125,60 @@ export function createTracker(options: ResolvedOptions, deps: TrackerDependencie
     }
   };
 
+  const enqueueEvent = (input: EventInput): void => {
+    if (disposed) {
+      return;
+    }
+    const { session, isEntry } = touchCurrentSession(input.entryAttribution !== undefined);
+    const event: BatchEvent = {
+      id: deps.createId(),
+      name: input.name,
+      occurred_at: new Date(deps.now()).toISOString(),
+      session_id: session.id,
+      path: input.path,
+      ...(session.userId === undefined ? {} : { user_id: session.userId }),
+      ...(isEntry ? { attribution: input.entryAttribution } : {}),
+      ...(input.properties === undefined ? {} : { properties: input.properties }),
+    };
+    queue = enqueue(queue, event).queue;
+    if (shouldFlushNow(queue.length)) {
+      flush();
+      return;
+    }
+    flushTimer ??= setTimeout(() => {
+      flushTimer = undefined;
+      flush();
+    }, FLUSH_DELAY_MS);
+  };
+
+  const identify = (userId: string, path: string): void => {
+    if (disposed) {
+      return;
+    }
+    const { session } = touchSession(
+      parseSession(deps.sessionStore.read(SESSION_KEY)),
+      deps.now(),
+      deps.createId,
+    );
+    const alreadyIdentified = session.userId === userId;
+    deps.sessionStore.write(SESSION_KEY, serializeSession({ ...session, userId }));
+    if (!alreadyIdentified) {
+      enqueueEvent({ name: IDENTIFY_EVENT, path });
+    }
+  };
+
+  const reset = (): void => {
+    if (disposed) {
+      return;
+    }
+    flush();
+    deps.sessionStore.remove(SESSION_KEY);
+  };
+
   return {
-    enqueue: (input) => {
-      if (disposed) {
-        return;
-      }
-      const { session, isEntry } = touchCurrentSession(input.entryAttribution !== undefined);
-      const event: BatchEvent = {
-        id: deps.createId(),
-        name: input.name,
-        occurred_at: new Date(deps.now()).toISOString(),
-        session_id: session.id,
-        path: input.path,
-        ...(session.userId === undefined ? {} : { user_id: session.userId }),
-        ...(isEntry ? { attribution: input.entryAttribution } : {}),
-        ...(input.properties === undefined ? {} : { properties: input.properties }),
-      };
-      queue = enqueue(queue, event).queue;
-      if (shouldFlushNow(queue.length)) {
-        flush();
-        return;
-      }
-      flushTimer ??= setTimeout(() => {
-        flushTimer = undefined;
-        flush();
-      }, FLUSH_DELAY_MS);
-    },
+    enqueue: enqueueEvent,
+    identify,
+    reset,
     flush,
     dispose: () => {
       disposed = true;
