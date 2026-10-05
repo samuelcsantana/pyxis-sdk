@@ -1,21 +1,10 @@
-import type { Batch, PropertyValue } from './core/batch.js';
+import type { PropertyValue } from './core/batch.js';
+import type { PyxisOptions } from './core/options.js';
 
 export type { Batch, BatchAttribution, BatchEvent, PropertyValue } from './core/batch.js';
+export type { PyxisDebugOptions, PyxisOptions } from './core/options.js';
 
 export type Properties = Readonly<Record<string, PropertyValue>>;
-
-export interface PyxisDebugOptions {
-  readonly dryRun?: boolean;
-  readonly onBatch?: (batch: Batch) => void;
-}
-
-export interface PyxisOptions {
-  readonly key: string | undefined | null;
-  readonly endpoint: string;
-  readonly pathRules?: readonly string[];
-  readonly autoPageViews?: boolean;
-  readonly debug?: PyxisDebugOptions;
-}
 
 const doNothing = (): undefined => undefined;
 
