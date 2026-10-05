@@ -21,9 +21,8 @@ without cookies, without personal data and without a single runtime dependency.*
 
 > **Status:** early development. The package name `pyxis-analytics` is reserved on npm with a
 > `0.0.0` placeholder; the first usable version is `0.1.0`, published from GitHub Actions with npm
-> provenance. On `main`, `init()` already records page views and `optOut()` and `optIn()` work,
-> while `track()`, `identify()` and `reset()` are still no-ops; the published `0.0.0` is only the
-> placeholder (see [Roadmap](#roadmap)).
+> provenance. On `main` every function below works, validated against the API's contract; until
+> 0.1.0 is released, the published `0.0.0` is only the placeholder (see [Roadmap](#roadmap)).
 
 ## Ecosystem
 
@@ -41,13 +40,13 @@ tab, URLs reduced to path templates, query strings dropped except campaign tags,
 track" signals honored before anything is queued. It is small enough to forget about: the budget
 is 5 KB gzipped, enforced in CI.
 
-## Planned API (0.1.0)
+## API
 
 ```ts
 import { init, track, identify, reset } from 'pyxis-analytics';
 
 init({
-  key: 'pk_live_…',
+  key: 'pyxis_pk_…',
   endpoint: 'https://api.pyxis.example.com',
   pathRules: ['/orders/:id'],
 });
@@ -77,6 +76,12 @@ reset();
 A route change that keeps the same templated path records nothing, so routers that call
 `replaceState` on their own do not inflate page views. Only the first page view of a visit carries
 its attribution (referrer host, campaign tags, ad click flag).
+
+Call `identify(userId)` on every load of the signed-in part of the site, not only right after
+sign-in: the id lives in `sessionStorage`, so a new tab starts without it, and calling it again
+for the same user sends nothing. Pass the site's internal id (`[A-Za-z0-9_-]{1,64}`), never an
+email. `track` ignores reserved or malformed names and drops invalid properties one by one; set
+`debug: {}` to see why in the console.
 
 ## Privacy by design
 
@@ -132,6 +137,7 @@ npm run build && npm run size
 ```bash
 npm run test:cov       # unit tests in jsdom, 100% coverage required
 npm run test:tooling   # the lint rule and the scripts
+npx vitest run src/contract.test.ts   # the contract test alone
 ```
 
 Coverage must stay at **100% of statements, branches, functions and lines** of `src/`; CI fails
@@ -142,7 +148,10 @@ outside `src/` and is tested on Node's test runner instead.
 
 ```text
 src/
-├── core/        pure rules and the batch format
+├── core/        pure rules: batching, retries, session, privacy, paths, attribution, input checks
+├── adapters/    browser edges: transport, storage, navigation, page lifecycle, ids
+├── tracker.ts   the queue, the session and the timers
+├── page-views.ts automatic page views
 └── index.ts     the public API
 contract/        literal copy of pyxis-api's OpenAPI document (npm run contract:sync)
 eslint-rules/    the local no-comments ESLint rule
@@ -153,8 +162,10 @@ docs/adr/        architecture decision records
 ## Contract
 
 The batch format belongs to [pyxis-api](https://github.com/samuelcsantana/pyxis-api), which
-publishes it as OpenAPI 3.1. `contract/openapi.json` is a literal copy; a daily workflow fails when
-the upstream file moves and this copy does not.
+publishes it as OpenAPI 3.1. `contract/openapi.json` is a literal copy. The contract test builds
+batches through the real tracker (an attributed page view, an event with properties, an identify)
+and validates them against `components.schemas.BatchRequest` with Ajv; a daily workflow runs it
+against the upstream document, so a breaking change in the API shows up here the next morning.
 
 ## Architecture decisions
 
@@ -170,7 +181,8 @@ the upstream file moves and this copy does not.
 - [x] Package skeleton, quality gates, release and publish pipeline
 - [x] Core: queue, batching, transport, retry, session, privacy signals, opt-out
 - [x] Page views: History API, path templates, query sanitizing, attribution
-- [ ] `track`, `identify`, `reset`, contract test against the API, release 0.1.0
+- [x] `track`, `identify`, `reset`, contract test against the API
+- [ ] Release 0.1.0 to npm with provenance
 - [ ] `trackRequest`, release 0.2.0
 - [ ] Playground on GitHub Pages
 
