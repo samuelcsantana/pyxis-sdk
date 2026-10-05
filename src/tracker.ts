@@ -13,6 +13,7 @@ import type { ResolvedOptions } from './core/options.js';
 import { judgeOutcome, retryDelay, type SendOutcome } from './core/retry-policy.js';
 import {
   parseSession,
+  recordEntry,
   type SessionState,
   serializeSession,
   touchSession,
@@ -31,7 +32,7 @@ export interface TrackerDependencies {
 export interface EventInput {
   readonly name: string;
   readonly path: string;
-  readonly attribution?: BatchAttribution;
+  readonly entryAttribution?: BatchAttribution;
   readonly properties?: Readonly<Record<string, PropertyValue>>;
 }
 
@@ -49,11 +50,15 @@ export function createTracker(options: ResolvedOptions, deps: TrackerDependencie
   const retryTimers = new Set<ReturnType<typeof setTimeout>>();
   let disposed = false;
 
-  const touchCurrentSession = (): SessionState => {
+  const touchCurrentSession = (
+    claimsEntry: boolean,
+  ): { session: SessionState; isEntry: boolean } => {
     const stored = parseSession(deps.sessionStore.read(SESSION_KEY));
     const { session } = touchSession(stored, deps.now(), deps.createId);
-    deps.sessionStore.write(SESSION_KEY, serializeSession(session));
-    return session;
+    const isEntry = claimsEntry && session.entryRecorded !== true;
+    const updated = isEntry ? recordEntry(session) : session;
+    deps.sessionStore.write(SESSION_KEY, serializeSession(updated));
+    return { session: updated, isEntry };
   };
 
   const tryNotifyBatch = (batch: Batch): void => {
@@ -122,7 +127,7 @@ export function createTracker(options: ResolvedOptions, deps: TrackerDependencie
       if (disposed) {
         return;
       }
-      const session = touchCurrentSession();
+      const { session, isEntry } = touchCurrentSession(input.entryAttribution !== undefined);
       const event: BatchEvent = {
         id: deps.createId(),
         name: input.name,
@@ -130,7 +135,7 @@ export function createTracker(options: ResolvedOptions, deps: TrackerDependencie
         session_id: session.id,
         path: input.path,
         ...(session.userId === undefined ? {} : { user_id: session.userId }),
-        ...(input.attribution === undefined ? {} : { attribution: input.attribution }),
+        ...(isEntry ? { attribution: input.entryAttribution } : {}),
         ...(input.properties === undefined ? {} : { properties: input.properties }),
       };
       queue = enqueue(queue, event).queue;

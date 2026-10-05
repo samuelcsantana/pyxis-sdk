@@ -4,6 +4,7 @@ export interface SessionState {
   readonly id: string;
   readonly lastActivityAt: number;
   readonly userId?: string;
+  readonly entryRecorded?: true;
 }
 
 export interface SessionTouch {
@@ -48,8 +49,17 @@ export function parseSession(raw: string | null): SessionState | undefined {
   ) {
     return undefined;
   }
-  const { id, lastActivityAt, userId } = value;
-  return typeof userId === 'string' ? { id, lastActivityAt, userId } : { id, lastActivityAt };
+  const { id, lastActivityAt, userId, entryRecorded } = value;
+  return {
+    id,
+    lastActivityAt,
+    ...(typeof userId === 'string' ? { userId } : {}),
+    ...(entryRecorded === true ? { entryRecorded } : {}),
+  };
+}
+
+export function recordEntry(session: SessionState): SessionState {
+  return { ...session, entryRecorded: true };
 }
 
 export function serializeSession(session: SessionState): string {
