@@ -21,7 +21,9 @@ without cookies, without personal data and without a single runtime dependency.*
 
 > **Status:** early development. The package name `pyxis-analytics` is reserved on npm with a
 > `0.0.0` placeholder; the first usable version is `0.1.0`, published from GitHub Actions with npm
-> provenance. Until then every exported function is a no-op (see [Roadmap](#roadmap)).
+> provenance. On `main`, `init()`, `optOut()` and `optIn()` already work, while `track()`,
+> `identify()` and `reset()` are still no-ops, so no event is sent yet; the published `0.0.0` is
+> only the placeholder (see [Roadmap](#roadmap)).
 
 ## Ecosystem
 
@@ -72,6 +74,9 @@ reset();
 - Query strings are dropped, except `utm_source`, `utm_medium` and `utm_campaign`; ad click ids
   become a single `from_ad_click: true`.
 - Global Privacy Control and Do Not Track switch the tracker off.
+- `optOut()` writes a single `pyxis:opt-out` marker to `localStorage`, the only thing the SDK
+  keeps beyond the tab, so the choice holds on later visits.
+- Batches are sent with `credentials: "omit"`: no cookie of any domain travels with them.
 - No key configured means nothing runs, which keeps tests and local development clean.
 
 ## Architecture
@@ -81,7 +86,7 @@ flowchart LR
   subgraph Shell["Thin shell"]
     Navigation["History API"] --> Tracker
     Tracker --> Transport["fetch keepalive<br>sendBeacon"]
-    Tracker --> Storage["sessionStorage"]
+    Tracker --> Storage["sessionStorage<br>localStorage (opt-out)"]
   end
   subgraph Core["Functional core (pure)"]
     Paths["path templates"]
@@ -150,7 +155,7 @@ the upstream file moves and this copy does not.
 ## Roadmap
 
 - [x] Package skeleton, quality gates, release and publish pipeline
-- [ ] Core: queue, batching, transport, retry, session, privacy signals, opt-out
+- [x] Core: queue, batching, transport, retry, session, privacy signals, opt-out
 - [ ] Page views: History API, path templates, query sanitizing, attribution
 - [ ] `track`, `identify`, `reset`, contract test against the API, release 0.1.0
 - [ ] `trackRequest`, release 0.2.0
