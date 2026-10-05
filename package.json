@@ -1,0 +1,44 @@
+{
+  "name": "pyxis-analytics",
+  "version": "0.0.0",
+  "description": "Privacy-first product analytics tracker for the browser: no cookies, no personal data, zero dependencies.",
+  "keywords": [
+    "analytics",
+    "product-analytics",
+    "privacy",
+    "tracker",
+    "lgpd",
+    "gdpr",
+    "zero-dependency"
+  ],
+  "homepage": "https://github.com/samuelcsantana/pyxis-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/samuelcsantana/pyxis-sdk/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samuelcsantana/pyxis-sdk.git"
+  },
+  "license": "MIT",
+  "author": "Samuel Santana",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prebuild": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --sourcemap --outfile=dist/index.js && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "typescript": "~6.0.3"
+  }
+}
