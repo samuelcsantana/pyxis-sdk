@@ -8,6 +8,9 @@ on:
 permissions:
   contents: read
 
+env:
+  HUSKY: 0
+
 jobs:
   upstream:
     runs-on: ubuntu-latest
@@ -16,6 +19,14 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version-file: .nvmrc
-      - run: node scripts/contract-sync.mts
-      - name: Fail when the API contract moved and this copy did not
-        run: git diff --exit-code contract/openapi.json
+          cache: npm
+      - run: npm ci
+      - name: Fetch the contract from pyxis-api main
+        run: node scripts/contract-sync.mts
+      - name: Validate the SDK's batches against it
+        run: npx vitest run src/contract.test.ts
+      - name: Point out a copy that needs syncing
+        run: |
+          if ! git diff --quiet contract/openapi.json; then
+            echo "::notice title=Contract::pyxis-api changed its contract; run npm run contract:sync in a pull request."
+          fi
