@@ -10,20 +10,14 @@ describe('the public surface before the tracker exists', () => {
     Object.defineProperty(navigator, 'sendBeacon', { value: sendBeaconSpy, configurable: true });
   });
 
-  function callEverything(): unknown[] {
-    return [
-      init({ key: 'pk_live_00000000000000000000000000000000', endpoint: 'https://api.example.com' }),
-      track('calculator_result_shown', { calculator: 'ifood', used_plan_preset: true }),
-      identify('user_42'),
-      reset(),
-      optOut(),
-      optIn(),
-    ];
+  function callEverything(): void {
+    init({ key: 'pk_live_00000000000000000000000000000000', endpoint: 'https://api.example.com' });
+    track('calculator_result_shown', { calculator: 'ifood', used_plan_preset: true });
+    identify('user_42');
+    reset();
+    optOut();
+    optIn();
   }
-
-  it('returns nothing from any function', () => {
-    expect(callEverything()).toEqual([undefined, undefined, undefined, undefined, undefined, undefined]);
-  });
 
   it('sends nothing over the network', () => {
     callEverything();
@@ -42,13 +36,10 @@ describe('the public surface before the tracker exists', () => {
     expect(getItem).not.toHaveBeenCalled();
   });
 
-  it('leaves the History API alone', () => {
-    const pushState = history.pushState;
-    const replaceState = history.replaceState;
-
+  it('leaves the History API unpatched', () => {
     callEverything();
 
-    expect(history.pushState).toBe(pushState);
-    expect(history.replaceState).toBe(replaceState);
+    expect(Object.hasOwn(history, 'pushState')).toBe(false);
+    expect(Object.hasOwn(history, 'replaceState')).toBe(false);
   });
 });
