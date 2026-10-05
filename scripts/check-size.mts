@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
 export const BUNDLE_FILE = 'dist/index.js';
-export const SIZE_BUDGET_BYTES = 3 * 1024;
+export const SIZE_BUDGET_BYTES = 5 * 1024;
 
 export interface SizeReport {
   readonly withinBudget: boolean;

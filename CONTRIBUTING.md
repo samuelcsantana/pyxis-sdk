@@ -27,7 +27,7 @@ npm run size       # the gzip size of the bundle against its budget
 | `npm test` / `npm run test:cov`   | Unit tests in jsdom; `test:cov` enforces 100% coverage          |
 | `npm run test:tooling`            | Tests of the lint rule and the scripts                          |
 | `npm run build`                   | Minified ES module with esbuild, declarations with tsc          |
-| `npm run size`                    | Fails when the gzipped bundle exceeds 3 KB                      |
+| `npm run size`                    | Fails when the gzipped bundle exceeds 5 KB                      |
 | `npm run contract:sync`           | Copies the API contract from pyxis-api into `contract/`         |
 
 ## Design rules
