@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   parseSession,
+  recordEntry,
   SESSION_IDLE_TIMEOUT_MS,
   serializeSession,
   touchSession,
@@ -45,6 +46,28 @@ describe('touchSession', () => {
   });
 });
 
+describe('recordEntry', () => {
+  it('marks the entry without touching the rest of the session', () => {
+    expect(recordEntry({ id: 'visit', lastActivityAt: 42, userId: 'user_42' })).toEqual({
+      id: 'visit',
+      lastActivityAt: 42,
+      userId: 'user_42',
+      entryRecorded: true,
+    });
+  });
+});
+
+describe('touchSession and the entry flag', () => {
+  it('keeps the flag while the session lasts and forgets it on renewal', () => {
+    const current = recordEntry({ id: 'visit', lastActivityAt: 0 });
+
+    expect(touchSession(current, 1, newId).session.entryRecorded).toBe(true);
+    expect(
+      touchSession(current, SESSION_IDLE_TIMEOUT_MS + 1, newId).session.entryRecorded,
+    ).toBeUndefined();
+  });
+});
+
 describe('parseSession', () => {
   it('reads back what serializeSession wrote', () => {
     const session = { id: 'visit', lastActivityAt: 42, userId: 'user_42' };
@@ -54,6 +77,23 @@ describe('parseSession', () => {
 
   it('reads a session without a user', () => {
     expect(parseSession('{"id":"visit","lastActivityAt":42}')).toEqual({
+      id: 'visit',
+      lastActivityAt: 42,
+    });
+  });
+
+  it('reads back a session whose entry page view was recorded', () => {
+    const session = recordEntry({ id: 'visit', lastActivityAt: 42 });
+
+    expect(parseSession(serializeSession(session))).toEqual({
+      id: 'visit',
+      lastActivityAt: 42,
+      entryRecorded: true,
+    });
+  });
+
+  it('ignores an entry flag that is not true', () => {
+    expect(parseSession('{"id":"visit","lastActivityAt":42,"entryRecorded":"yes"}')).toEqual({
       id: 'visit',
       lastActivityAt: 42,
     });

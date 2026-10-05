@@ -129,7 +129,7 @@ describe('createTracker', () => {
     expect(sent).toHaveLength(0);
   });
 
-  it('attaches attribution and the identified user when present', () => {
+  it('attaches the identified user of the session', () => {
     const store = memoryStore();
     store.write(
       SESSION_KEY,
@@ -137,18 +137,43 @@ describe('createTracker', () => {
     );
     const { tracker, sent } = setup({}, [], store);
 
-    tracker.enqueue({
-      name: 'page_view',
-      path: '/pricing',
-      attribution: { from_ad_click: true, referrer_host: 'google.com' },
-    });
+    tracker.enqueue({ name: 'cta_clicked', path: '/pricing' });
     tracker.flush();
 
-    expect(sent[0]?.batch.events[0]).toMatchObject({
-      session_id: 'visit',
-      user_id: 'u_42',
-      attribution: { from_ad_click: true, referrer_host: 'google.com' },
+    expect(sent[0]?.batch.events[0]).toMatchObject({ session_id: 'visit', user_id: 'u_42' });
+  });
+
+  it('attaches the entry attribution only to the first claim of each session', async () => {
+    const { tracker, sent, sessionStore } = setup();
+    const entryAttribution = { from_ad_click: true, referrer_host: 'google.com' };
+
+    tracker.enqueue({ name: 'page_view', path: '/', entryAttribution });
+    tracker.enqueue({ name: 'page_view', path: '/pricing', entryAttribution });
+    tracker.flush();
+    await vi.advanceTimersByTimeAsync(SESSION_IDLE_TIMEOUT_MS + 1);
+    tracker.enqueue({ name: 'page_view', path: '/checkout', entryAttribution });
+    tracker.flush();
+
+    const events = sent.flatMap((entry) => entry.batch.events);
+    expect(events.map((event) => event.attribution)).toEqual([
+      entryAttribution,
+      undefined,
+      entryAttribution,
+    ]);
+    expect(JSON.parse(sessionStore.read(SESSION_KEY) ?? '{}')).toMatchObject({
+      entryRecorded: true,
     });
+  });
+
+  it('does not let an event without a claim use up the entry', () => {
+    const { tracker, sent } = setup();
+    const entryAttribution = { from_ad_click: false, referrer_host: 'blog.example.com' };
+
+    tracker.enqueue({ name: 'cta_clicked', path: '/' });
+    tracker.enqueue({ name: 'page_view', path: '/', entryAttribution });
+    tracker.flush();
+
+    expect(sent[0]?.batch.events[1]?.attribution).toEqual(entryAttribution);
   });
 
   it('keeps the visit while active and starts a new one after 30 minutes idle', async () => {
