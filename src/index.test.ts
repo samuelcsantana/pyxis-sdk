@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { OPT_OUT_KEY, OPT_OUT_VALUE } from './core/privacy.js';
 
-const OPTIONS = { key: 'pk_live_test', endpoint: 'https://api.pyxis.example.com' };
+const OPTIONS = { key: 'pyxis_pk_test', endpoint: 'https://api.pyxis.example.com' };
 
 type PublicApi = typeof import('./index.js');
 
@@ -208,7 +208,7 @@ describe('the public API', () => {
   it('never throws into the page, and reports the error only in debug mode', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const brokenOptions = (debug?: object) => ({
-      key: 'pk_live_test',
+      key: 'pyxis_pk_test',
       debug,
       get endpoint(): string {
         throw new Error('broken options');

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { BODY_CONTENT_TYPE, browserTransport } from './transport.js';
 
 const URL_ = 'https://api.pyxis.example.com/v1/batch';
-const BODY = '{"key":"pk_live_x","sent_at":"2026-10-06T14:03:11.120Z","events":[]}';
+const BODY = '{"key":"pyxis_pk_x","sent_at":"2026-10-06T14:03:11.120Z","events":[]}';
 
 function respondWith(status: number, headers: Record<string, string> = {}) {
   return vi.fn(() => Promise.resolve(new Response(null, { status, headers })));
