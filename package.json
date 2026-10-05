@@ -44,7 +44,8 @@
     "format:check": "prettier --check .",
     "test:tooling": "node --test \"eslint-rules/**/*.test.mjs\" \"scripts/**/*.test.mts\"",
     "size": "node scripts/check-size.mts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "contract:sync": "node scripts/contract-sync.mts"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
