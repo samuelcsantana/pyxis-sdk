@@ -154,11 +154,109 @@ describe('the public API', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it('keeps track, identify and reset as no-ops for now', async () => {
+  it('tracks a named event on the current templated path with its valid properties', async () => {
+    window.history.replaceState(null, '', '/orders/42');
     const pyxis = await loadFresh();
     pyxis.init({ ...OPTIONS, autoPageViews: false });
 
-    pyxis.track('calculator_result_shown', { calculator: 'ifood' });
+    pyxis.track('calculator_result_shown', { calculator: 'ifood', used_plan_preset: true });
+    pyxis.track('cta_clicked');
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(sentEvents(fetchSpy)).toEqual([
+      expect.objectContaining({
+        name: 'calculator_result_shown',
+        path: '/orders/:id',
+        properties: { calculator: 'ifood', used_plan_preset: true },
+      }),
+      expect.not.objectContaining({ properties: expect.anything() as unknown }),
+    ]);
+  });
+
+  it('drops invalid properties one by one and warns only in debug mode', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const pyxis = await loadFresh();
+    pyxis.init({ ...OPTIONS, autoPageViews: false, debug: {} });
+
+    pyxis.track('plan_selected', { plan: 'pro', 'Bad Key': 1 });
+    pyxis.track('plan_viewed', { 'Bad Key': 1 });
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(sentEvents(fetchSpy)).toEqual([
+      expect.objectContaining({ name: 'plan_selected', properties: { plan: 'pro' } }),
+      expect.not.objectContaining({ properties: expect.anything() as unknown }),
+    ]);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('dropped the property "Bad Key"'));
+  });
+
+  it.each(['page_view', 'Not Valid'])('refuses to track %j', async (name) => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const quiet = await loadFresh();
+    quiet.init({ ...OPTIONS, autoPageViews: false });
+
+    quiet.track(name);
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('explains a refused event name in debug mode', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const pyxis = await loadFresh();
+    pyxis.init({ ...OPTIONS, autoPageViews: false, debug: {} });
+
+    pyxis.track('page_view');
+    pyxis.track('Not Valid');
+
+    expect(warn.mock.calls).toEqual([
+      ['[pyxis] track() ignored "page_view": the name is reserved for the SDK'],
+      ['[pyxis] track() ignored "Not Valid": the name is not a valid event name'],
+    ]);
+  });
+
+  it('identifies the visit once and refuses an id that could be personal', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const pyxis = await loadFresh();
+    pyxis.init({ ...OPTIONS, autoPageViews: false, debug: {} });
+
+    pyxis.identify('ana@example.com');
+    pyxis.identify('user_42');
+    pyxis.identify('user_42');
+    pyxis.track('plan_selected');
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(sentEvents(fetchSpy)).toEqual([
+      expect.objectContaining({ name: 'identify', user_id: 'user_42' }),
+      expect.objectContaining({ name: 'plan_selected', user_id: 'user_42' }),
+    ]);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('never pass an email'));
+  });
+
+  it('starts an anonymous visit after reset', async () => {
+    const pyxis = await loadFresh();
+    pyxis.init({ ...OPTIONS, autoPageViews: false });
+
+    pyxis.identify('user_42');
+    pyxis.reset();
+    pyxis.track('page_seen');
+    window.dispatchEvent(new Event('pagehide'));
+
+    const events = sentEvents(fetchSpy) as { name: string; user_id?: string }[];
+    expect(events.map(({ name, user_id }) => [name, user_id])).toEqual([
+      ['identify', 'user_42'],
+      ['page_seen', undefined],
+    ]);
+  });
+
+  it('keeps track, identify and reset silent before init and without a key', async () => {
+    const pyxis = await loadFresh();
+
+    pyxis.track('cta_clicked');
+    pyxis.identify('user_42');
+    pyxis.reset();
+    pyxis.init({ ...OPTIONS, key: undefined });
+    pyxis.track('cta_clicked');
     pyxis.identify('user_42');
     pyxis.reset();
     window.dispatchEvent(new Event('pagehide'));

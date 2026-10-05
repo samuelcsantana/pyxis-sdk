@@ -5,7 +5,9 @@ import { readPrivacySignals } from './adapters/privacy-signals.js';
 import { webStore } from './adapters/storage.js';
 import type { PropertyValue } from './core/batch.js';
 import { isBrowserLike } from './core/environment.js';
+import { checkEventName, isValidUserId, sanitizeProperties } from './core/event-input.js';
 import { type PyxisOptions, resolveOptions } from './core/options.js';
+import { templatePath } from './core/path-template.js';
 import { isTrackingAllowed, OPT_OUT_KEY, OPT_OUT_VALUE } from './core/privacy.js';
 import { startPageViews } from './page-views.js';
 import { createTracker, type Tracker } from './tracker.js';
@@ -19,6 +21,7 @@ let started = false;
 let debugEnabled = false;
 let tracker: Tracker | undefined;
 let stoppers: readonly (() => void)[] = [];
+let pathRules: readonly string[] = [];
 
 function bestEffort(action: () => void): void {
   try {
@@ -28,6 +31,16 @@ function bestEffort(action: () => void): void {
       console.warn('[pyxis] ignored an internal error', error);
     }
   }
+}
+
+function debugWarn(message: string): void {
+  if (debugEnabled) {
+    console.warn(`[pyxis] ${message}`);
+  }
+}
+
+function currentPath(): string {
+  return templatePath(window.location.pathname, pathRules);
 }
 
 function localStore() {
@@ -67,21 +80,60 @@ export function init(options: PyxisOptions): void {
       return;
     }
     const current = createTracker(resolution.options, createBrowserDependencies());
+    pathRules = resolution.options.pathRules;
     tracker = current;
     const stopFlushingOnHide = onPageHide(() => {
       current.flush(true);
     });
     stoppers = resolution.options.autoPageViews
-      ? [stopFlushingOnHide, startAutoPageViews(current, resolution.options.pathRules)]
+      ? [stopFlushingOnHide, startAutoPageViews(current, pathRules)]
       : [stopFlushingOnHide];
   });
 }
 
-const doNothing = (): undefined => undefined;
+export function track(name: string, properties?: Properties): void {
+  bestEffort(() => {
+    if (tracker === undefined) {
+      return;
+    }
+    const nameCheck = checkEventName(name);
+    if (nameCheck !== 'ok') {
+      const why =
+        nameCheck === 'reserved' ? 'is reserved for the SDK' : 'is not a valid event name';
+      debugWarn(`track() ignored "${name}": the name ${why}`);
+      return;
+    }
+    const sanitized = sanitizeProperties(properties);
+    for (const { key, reason } of sanitized.dropped) {
+      debugWarn(`track("${name}") dropped the property "${key}" (${reason})`);
+    }
+    const hasProperties = Object.keys(sanitized.properties).length > 0;
+    tracker.enqueue({
+      name,
+      path: currentPath(),
+      ...(hasProperties ? { properties: sanitized.properties } : {}),
+    });
+  });
+}
 
-export const track: (name: string, properties?: Properties) => void = doNothing;
-export const identify: (userId: string) => void = doNothing;
-export const reset: () => void = doNothing;
+export function identify(userId: string): void {
+  bestEffort(() => {
+    if (tracker === undefined) {
+      return;
+    }
+    if (!isValidUserId(userId)) {
+      debugWarn('identify() ignored a user id outside [A-Za-z0-9_-]{1,64}; never pass an email');
+      return;
+    }
+    tracker.identify(userId, currentPath());
+  });
+}
+
+export function reset(): void {
+  bestEffort(() => {
+    tracker?.reset();
+  });
+}
 
 export function optOut(): void {
   bestEffort(() => {
