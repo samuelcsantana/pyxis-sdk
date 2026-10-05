@@ -26,3 +26,11 @@ export interface Batch {
   readonly sent_at: string;
   readonly events: readonly BatchEvent[];
 }
+
+export function buildBatch(key: string, sentAt: number, events: readonly BatchEvent[]): Batch {
+  return { key, sent_at: new Date(sentAt).toISOString(), events };
+}
+
+export function serializeBatch(batch: Batch): string {
+  return JSON.stringify(batch);
+}
