@@ -21,9 +21,9 @@ without cookies, without personal data and without a single runtime dependency.*
 
 > **Status:** early development. The package name `pyxis-analytics` is reserved on npm with a
 > `0.0.0` placeholder; the first usable version is `0.1.0`, published from GitHub Actions with npm
-> provenance. On `main`, `init()`, `optOut()` and `optIn()` already work, while `track()`,
-> `identify()` and `reset()` are still no-ops, so no event is sent yet; the published `0.0.0` is
-> only the placeholder (see [Roadmap](#roadmap)).
+> provenance. On `main`, `init()` already records page views and `optOut()` and `optIn()` work,
+> while `track()`, `identify()` and `reset()` are still no-ops; the published `0.0.0` is only the
+> placeholder (see [Roadmap](#roadmap)).
 
 ## Ecosystem
 
@@ -65,6 +65,18 @@ reset();
 | `reset()`                 | Sends what is queued, then starts a new anonymous visit (for sign-out)           |
 | `optOut()` / `optIn()`    | Stops or resumes tracking in this browser                                        |
 | `trackRequest(request)`   | The method, route template, status and duration of an HTTP call (0.2.0)          |
+
+| Option          | Default  | Meaning                                                                                          |
+| --------------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `key`           | required | The project's public key; empty or missing disables the SDK without an error                     |
+| `endpoint`      | required | The API's base URL, `http` or `https`                                                            |
+| `pathRules`     | `[]`     | Templates tried before the default rules: `'/blog/:slug'` turns `/blog/hello` into `/blog/:slug` |
+| `autoPageViews` | `true`   | Record the landing page and every History API route change as a `page_view`                      |
+| `debug`         | unset    | `{ dryRun, onBatch }`: inspect batches, optionally without sending them                          |
+
+A route change that keeps the same templated path records nothing, so routers that call
+`replaceState` on their own do not inflate page views. Only the first page view of a visit carries
+its attribution (referrer host, campaign tags, ad click flag).
 
 ## Privacy by design
 
@@ -157,7 +169,7 @@ the upstream file moves and this copy does not.
 
 - [x] Package skeleton, quality gates, release and publish pipeline
 - [x] Core: queue, batching, transport, retry, session, privacy signals, opt-out
-- [ ] Page views: History API, path templates, query sanitizing, attribution
+- [x] Page views: History API, path templates, query sanitizing, attribution
 - [ ] `track`, `identify`, `reset`, contract test against the API, release 0.1.0
 - [ ] `trackRequest`, release 0.2.0
 - [ ] Playground on GitHub Pages
