@@ -5,9 +5,19 @@ const OPTIONS = { key: 'pk_live_test', endpoint: 'https://api.pyxis.example.com'
 
 type PublicApi = typeof import('./index.js');
 
+let loaded: PublicApi | undefined;
+
 async function loadFresh(): Promise<PublicApi> {
   vi.resetModules();
-  return import('./index.js');
+  loaded = await import('./index.js');
+  return loaded;
+}
+
+function sentEvents(fetchSpy: { mock: { calls: unknown[][] } }): unknown[] {
+  return fetchSpy.mock.calls.flatMap(([, init]) => {
+    const body = (init as RequestInit).body;
+    return typeof body === 'string' ? (JSON.parse(body) as { events: unknown[] }).events : [];
+  });
 }
 
 function setNavigatorValue(name: string, value: unknown): void {
@@ -26,6 +36,9 @@ describe('the public API', () => {
   });
 
   afterEach(() => {
+    loaded?.optOut();
+    loaded = undefined;
+    window.history.replaceState(null, '', '/');
     localStorage.clear();
     sessionStorage.clear();
     setNavigatorValue('globalPrivacyControl', undefined);
@@ -99,14 +112,43 @@ describe('the public API', () => {
     expect(listensForPageHide()).toBe(false);
   });
 
-  it('flushes when the page hides, sending nothing while the queue is empty', async () => {
-    setNavigatorValue(
-      'sendBeacon',
-      vi.fn(() => true),
-    );
+  it('records the initial page view and sends it when the page hides', async () => {
     const pyxis = await loadFresh();
     pyxis.init(OPTIONS);
 
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(sentEvents(fetchSpy)).toEqual([
+      expect.objectContaining({
+        name: 'page_view',
+        path: '/',
+        attribution: { from_ad_click: false },
+      }),
+    ]);
+  });
+
+  it('records a page view per route change, templated', async () => {
+    const pyxis = await loadFresh();
+    pyxis.init({ ...OPTIONS, pathRules: ['/blog/:slug'] });
+
+    window.history.pushState(null, '', '/orders/42');
+    window.history.replaceState(null, '', '/orders/43');
+    window.history.pushState(null, '', '/blog/hello');
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(sentEvents(fetchSpy)).toEqual([
+      expect.objectContaining({ path: '/' }),
+      expect.objectContaining({ path: '/orders/:id' }),
+      expect.objectContaining({ path: '/blog/:slug' }),
+    ]);
+  });
+
+  it('records no page view on its own when autoPageViews is false', async () => {
+    const pyxis = await loadFresh();
+    pyxis.init({ ...OPTIONS, autoPageViews: false });
+
+    window.history.pushState(null, '', '/pricing');
     window.dispatchEvent(new Event('pagehide'));
 
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -114,11 +156,22 @@ describe('the public API', () => {
 
   it('keeps track, identify and reset as no-ops for now', async () => {
     const pyxis = await loadFresh();
-    pyxis.init(OPTIONS);
+    pyxis.init({ ...OPTIONS, autoPageViews: false });
 
     pyxis.track('calculator_result_shown', { calculator: 'ifood' });
     pyxis.identify('user_42');
     pyxis.reset();
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('stops recording page views after opting out', async () => {
+    const pyxis = await loadFresh();
+    pyxis.init(OPTIONS);
+
+    pyxis.optOut();
+    window.history.pushState(null, '', '/pricing');
     window.dispatchEvent(new Event('pagehide'));
 
     expect(fetchSpy).not.toHaveBeenCalled();
