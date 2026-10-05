@@ -2,6 +2,8 @@ const UUID_BYTES = 16;
 const VARIANT_MASK = 0x3f;
 const VARIANT_BITS = 0x80;
 
+export type UuidSource = Pick<Crypto, 'getRandomValues'> & Partial<Pick<Crypto, 'randomUUID'>>;
+
 function toHex(bytes: Uint8Array): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
@@ -18,17 +20,9 @@ export function uuidFromBytes(bytes: Uint8Array): string {
   ].join('-');
 }
 
-export function createUuid(source: Partial<Crypto> | undefined): string {
-  if (typeof source?.randomUUID === 'function') {
+export function createUuid(source: UuidSource): string {
+  if (typeof source.randomUUID === 'function') {
     return source.randomUUID();
   }
-  const bytes = new Uint8Array(UUID_BYTES);
-  if (typeof source?.getRandomValues === 'function') {
-    source.getRandomValues(bytes);
-  } else {
-    bytes.forEach((_, index) => {
-      bytes[index] = Math.floor(Math.random() * 256);
-    });
-  }
-  return uuidFromBytes(bytes);
+  return uuidFromBytes(source.getRandomValues(new Uint8Array(UUID_BYTES)));
 }
