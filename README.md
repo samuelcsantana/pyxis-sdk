@@ -63,7 +63,7 @@ reset();
 | `identify(userId)`        | Attaches the site's internal user id to later events and links the current visit |
 | `reset()`                 | Sends what is queued, then starts a new anonymous visit (for sign-out)           |
 | `optOut()` / `optIn()`    | Stops or resumes tracking in this browser                                        |
-| `trackRequest(request)`   | The method, route template, status and duration of an HTTP call (0.2.0)          |
+| `trackRequest(request)`   | The method, route template, status and duration of an HTTP call                  |
 
 | Option          | Default  | Meaning                                                                                          |
 | --------------- | -------- | ------------------------------------------------------------------------------------------------ |
@@ -82,6 +82,32 @@ sign-in: the id lives in `sessionStorage`, so a new tab starts without it, and c
 for the same user sends nothing. Pass the site's internal id (`[A-Za-z0-9_-]{1,64}`), never an
 email. `track` ignores reserved or malformed names and drops invalid properties one by one; set
 `debug: {}` to see why in the console.
+
+`trackRequest` records calls the site makes to its own API. Wrap the HTTP client once; leave
+aborted requests out, since a user who navigated away is not an error:
+
+```ts
+import { trackRequest, type RequestMethod } from 'pyxis-analytics';
+
+export async function apiFetch(url: string, method: RequestMethod, init?: RequestInit) {
+  const startedAt = performance.now();
+  const durationMs = () => Math.round(performance.now() - startedAt);
+  try {
+    const response = await fetch(url, { ...init, method });
+    trackRequest({ method, url, status: response.status, durationMs: durationMs() });
+    return response;
+  } catch (error) {
+    if (!(error instanceof DOMException && error.name === 'AbortError')) {
+      trackRequest({ method, url, status: 0, durationMs: durationMs() });
+    }
+    throw error;
+  }
+}
+```
+
+The URL is reduced to a templated route (`/api/orders/42?coupon=X` becomes `/api/orders/:id`);
+status `0` means no response arrived. An optional `errorCode` carries your API's machine error key
+(`[a-z0-9_.]{1,64}`), never a message.
 
 ## Privacy by design
 
@@ -183,7 +209,7 @@ against the upstream document, so a breaking change in the API shows up here the
 - [x] Page views: History API, path templates, query sanitizing, attribution
 - [x] `track`, `identify`, `reset`, contract test against the API
 - [ ] Release 0.1.0 to npm with provenance
-- [ ] `trackRequest`, release 0.2.0
+- [x] `trackRequest`
 - [ ] Playground on GitHub Pages
 
 ## Contributing and license
