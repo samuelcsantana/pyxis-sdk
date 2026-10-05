@@ -42,7 +42,8 @@
     "lint": "eslint . --max-warnings 0 && node scripts/check-no-comments.mts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:tooling": "node --test \"eslint-rules/**/*.test.mjs\" \"scripts/**/*.test.mts\""
+    "test:tooling": "node --test \"eslint-rules/**/*.test.mjs\" \"scripts/**/*.test.mts\"",
+    "size": "node scripts/check-size.mts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
