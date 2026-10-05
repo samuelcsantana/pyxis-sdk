@@ -249,13 +249,71 @@ describe('the public API', () => {
     ]);
   });
 
+  it('tracks an HTTP request as an api_request with a templated route', async () => {
+    window.history.replaceState(null, '', '/orders/7');
+    const pyxis = await loadFresh();
+    pyxis.init({ ...OPTIONS, autoPageViews: false });
+
+    pyxis.trackRequest({
+      method: 'POST',
+      url: 'https://api.example.com/orders/42/items?coupon=X',
+      status: 422,
+      durationMs: 87,
+      errorCode: 'order.invalid_total',
+    });
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(sentEvents(fetchSpy)).toEqual([
+      expect.objectContaining({
+        name: 'api_request',
+        path: '/orders/:id',
+        properties: {
+          method: 'POST',
+          route: '/orders/:id/items',
+          status: 422,
+          duration_ms: 87,
+          error_code: 'order.invalid_total',
+        },
+      }),
+    ]);
+  });
+
+  it('ignores an invalid request and drops an invalid error code, explaining both in debug mode', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const pyxis = await loadFresh();
+    pyxis.init({ ...OPTIONS, autoPageViews: false, debug: {} });
+
+    pyxis.trackRequest({ method: 'GET', url: '/orders', status: 200, durationMs: 12.5 });
+    pyxis.trackRequest({
+      method: 'GET',
+      url: '/orders',
+      status: 200,
+      durationMs: 12,
+      errorCode: 'Bad Code',
+    });
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(sentEvents(fetchSpy)).toEqual([
+      expect.objectContaining({
+        name: 'api_request',
+        properties: { method: 'GET', route: '/orders', status: 200, duration_ms: 12 },
+      }),
+    ]);
+    expect(warn.mock.calls).toEqual([
+      ['[pyxis] trackRequest() ignored a request with an invalid duration'],
+      ['[pyxis] trackRequest() dropped an errorCode outside [a-z0-9_.]{1,64}'],
+    ]);
+  });
+
   it('keeps track, identify and reset silent before init and without a key', async () => {
     const pyxis = await loadFresh();
 
     pyxis.track('cta_clicked');
     pyxis.identify('user_42');
     pyxis.reset();
+    pyxis.trackRequest({ method: 'GET', url: '/', status: 200, durationMs: 1 });
     pyxis.init({ ...OPTIONS, key: undefined });
+    pyxis.trackRequest({ method: 'GET', url: '/', status: 200, durationMs: 1 });
     pyxis.track('cta_clicked');
     pyxis.identify('user_42');
     pyxis.reset();
