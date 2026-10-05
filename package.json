@@ -35,14 +35,14 @@
   "scripts": {
     "prebuild": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "build": "esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --sourcemap --outfile=dist/index.js && tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json && tsc -p scripts/tsconfig.json",
     "test": "vitest run",
     "test:cov": "vitest run --coverage",
     "test:watch": "vitest",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "eslint . --max-warnings 0 && node scripts/check-no-comments.mts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:tooling": "node --test \"eslint-rules/**/*.test.mjs\""
+    "test:tooling": "node --test \"eslint-rules/**/*.test.mjs\" \"scripts/**/*.test.mts\""
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
