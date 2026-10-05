@@ -4,7 +4,7 @@ Date: 2026-10-05
 
 ## Status
 
-Accepted
+Accepted; the size budget is amended by [ADR 0004](0004-five-kilobyte-budget.md)
 
 ## Context
 
