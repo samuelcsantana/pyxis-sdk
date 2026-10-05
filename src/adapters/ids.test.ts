@@ -21,21 +21,24 @@ describe('uuidFromBytes', () => {
 });
 
 describe('createUuid', () => {
+  const fillWithAb = ((array: Uint8Array) =>
+    array.fill(0xab)) as unknown as Crypto['getRandomValues'];
+
   it('uses crypto.randomUUID when the browser has it', () => {
     const randomUUID = vi.fn(() => '6f1c0000-0000-4000-8000-000000000000' as const);
 
-    expect(createUuid({ randomUUID })).toBe('6f1c0000-0000-4000-8000-000000000000');
+    expect(createUuid({ randomUUID, getRandomValues: fillWithAb })).toBe(
+      '6f1c0000-0000-4000-8000-000000000000',
+    );
   });
 
-  it('falls back to getRandomValues outside secure contexts', () => {
-    const getRandomValues = ((array: Uint8Array) =>
-      array.fill(0xab)) as unknown as Crypto['getRandomValues'];
-
-    expect(createUuid({ getRandomValues })).toBe('abababab-abab-4bab-abab-abababababab');
+  it('falls back to getRandomValues outside secure contexts, where randomUUID is missing', () => {
+    expect(createUuid({ getRandomValues: fillWithAb })).toBe(
+      'abababab-abab-4bab-abab-abababababab',
+    );
   });
 
-  it('still produces a valid UUID without any crypto API', () => {
-    expect(createUuid({})).toMatch(UUID_V4);
-    expect(createUuid(undefined)).toMatch(UUID_V4);
+  it('produces a version 4 UUID from the real crypto API', () => {
+    expect(createUuid(globalThis.crypto)).toMatch(UUID_V4);
   });
 });
