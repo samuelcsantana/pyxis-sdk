@@ -28,17 +28,17 @@ describe('resolveOptions', () => {
   });
 
   it('is disabled with an endpoint that is not an http URL', () => {
-    expect(resolveOptions({ key: 'pk_live_x', endpoint: 'nope' })).toEqual({
+    expect(resolveOptions({ key: 'pyxis_pk_x', endpoint: 'nope' })).toEqual({
       ok: false,
       reason: 'invalid-endpoint',
     });
   });
 
   it('applies the defaults', () => {
-    expect(resolveOptions({ key: ' pk_live_x ', endpoint })).toEqual({
+    expect(resolveOptions({ key: ' pyxis_pk_x ', endpoint })).toEqual({
       ok: true,
       options: {
-        key: 'pk_live_x',
+        key: 'pyxis_pk_x',
         batchUrl: 'https://api.pyxis.example.com/v1/batch',
         pathRules: [],
         autoPageViews: true,
@@ -52,7 +52,7 @@ describe('resolveOptions', () => {
 
     expect(
       resolveOptions({
-        key: 'pk_live_x',
+        key: 'pyxis_pk_x',
         endpoint,
         pathRules: ['/orders/:id'],
         autoPageViews: false,
@@ -61,7 +61,7 @@ describe('resolveOptions', () => {
     ).toEqual({
       ok: true,
       options: {
-        key: 'pk_live_x',
+        key: 'pyxis_pk_x',
         batchUrl: 'https://api.pyxis.example.com/v1/batch',
         pathRules: ['/orders/:id'],
         autoPageViews: false,

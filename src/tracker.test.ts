@@ -11,7 +11,7 @@ import { createTracker, SESSION_KEY, type TrackerDependencies } from './tracker.
 const START = Date.UTC(2026, 9, 6, 14, 3, 10, 4);
 
 const OPTIONS: ResolvedOptions = {
-  key: 'pk_live_test',
+  key: 'pyxis_pk_test',
   batchUrl: 'https://api.pyxis.example.com/v1/batch',
   pathRules: [],
   autoPageViews: true,
@@ -78,7 +78,7 @@ describe('createTracker', () => {
     expect(sent).toHaveLength(1);
     expect(sent[0]?.url).toBe(OPTIONS.batchUrl);
     expect(sent[0]?.batch).toEqual({
-      key: 'pk_live_test',
+      key: 'pyxis_pk_test',
       sent_at: new Date(START + FLUSH_DELAY_MS).toISOString(),
       events: [
         {
@@ -278,7 +278,7 @@ describe('createTracker', () => {
     tracker.enqueue({ name: 'page_view', path: '/' });
     tracker.flush();
 
-    expect(onBatch).toHaveBeenCalledWith(expect.objectContaining({ key: 'pk_live_test' }));
+    expect(onBatch).toHaveBeenCalledWith(expect.objectContaining({ key: 'pyxis_pk_test' }));
     expect(sent).toHaveLength(0);
   });
 
