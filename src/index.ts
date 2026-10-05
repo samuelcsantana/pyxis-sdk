@@ -8,12 +8,18 @@ import { isBrowserLike } from './core/environment.js';
 import { checkEventName, isValidUserId, sanitizeProperties } from './core/event-input.js';
 import { type PyxisOptions, resolveOptions } from './core/options.js';
 import { templatePath } from './core/path-template.js';
+import {
+  API_REQUEST_EVENT,
+  checkTrackedRequest,
+  type TrackedRequest,
+} from './core/tracked-request.js';
 import { isTrackingAllowed, OPT_OUT_KEY, OPT_OUT_VALUE } from './core/privacy.js';
 import { startPageViews } from './page-views.js';
 import { createTracker, type Tracker } from './tracker.js';
 
 export type { Batch, BatchAttribution, BatchEvent, PropertyValue } from './core/batch.js';
 export type { PyxisDebugOptions, PyxisOptions } from './core/options.js';
+export type { RequestMethod, TrackedRequest } from './core/tracked-request.js';
 
 export type Properties = Readonly<Record<string, PropertyValue>>;
 
@@ -132,6 +138,23 @@ export function identify(userId: string): void {
 export function reset(): void {
   bestEffort(() => {
     tracker?.reset();
+  });
+}
+
+export function trackRequest(request: TrackedRequest): void {
+  bestEffort(() => {
+    if (tracker === undefined) {
+      return;
+    }
+    const check = checkTrackedRequest(request, pathRules);
+    if (!check.ok) {
+      debugWarn(`trackRequest() ignored a request with an invalid ${check.reason}`);
+      return;
+    }
+    if (check.droppedErrorCode) {
+      debugWarn('trackRequest() dropped an errorCode outside [a-z0-9_.]{1,64}');
+    }
+    tracker.enqueue({ name: API_REQUEST_EVENT, path: currentPath(), properties: check.properties });
   });
 }
 

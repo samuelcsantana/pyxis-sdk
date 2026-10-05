@@ -7,6 +7,7 @@ import type { Transport } from './adapters/transport.js';
 import type { Batch } from './core/batch.js';
 import { buildAttribution } from './core/attribution.js';
 import type { ResolvedOptions } from './core/options.js';
+import { checkTrackedRequest } from './core/tracked-request.js';
 import { createTracker } from './tracker.js';
 
 const CONTRACT_FILE = 'contract/openapi.json';
@@ -61,7 +62,7 @@ describe('batches against the API contract', () => {
     vi.setSystemTime(Date.UTC(2026, 9, 6, 14, 3, 10, 4));
   });
 
-  it('builds batches the API accepts: an attributed page view, an event with properties and an identify', () => {
+  it('builds batches the API accepts: an attributed page view, an event with properties, an identify and an api_request', () => {
     const { tracker, batches } = recordedBatches();
 
     tracker.enqueue({
@@ -79,6 +80,19 @@ describe('batches against the API contract', () => {
       properties: { calculator: 'ifood', used_plan_preset: true, monthly_sales: 12_500.5 },
     });
     tracker.identify('user_42', '/dashboard');
+    const request = checkTrackedRequest(
+      {
+        method: 'POST',
+        url: '/orders/42',
+        status: 422,
+        durationMs: 87,
+        errorCode: 'order.invalid',
+      },
+      [],
+    );
+    if (request.ok) {
+      tracker.enqueue({ name: 'api_request', path: '/dashboard', properties: request.properties });
+    }
     tracker.flush();
 
     const [batch] = batches();
@@ -86,6 +100,7 @@ describe('batches against the API contract', () => {
       'page_view',
       'calculator_result_shown',
       'identify',
+      'api_request',
     ]);
     expect(validate(batch)).toBe(true);
     expect(validate.errors ?? []).toEqual([]);
