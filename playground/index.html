@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pyxis SDK playground</title>
+    <link rel="stylesheet" href="playground.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Pyxis SDK playground</h1>
+        <p>
+          The real <code>pyxis-analytics</code> tracker in dry-run mode: every batch it would send
+          is shown below instead, and no request leaves this page. All data is invented.
+        </p>
+      </header>
+
+      <section aria-labelledby="actions-heading">
+        <h2 id="actions-heading">Do something</h2>
+        <div class="group" role="group" aria-labelledby="navigate-label">
+          <span id="navigate-label" class="label">Navigate</span>
+          <button type="button" data-path="/pricing">Open /pricing</button>
+          <button type="button" data-path="/orders/8213">Open /orders/8213</button>
+          <button
+            type="button"
+            data-path="/?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=october&amp;gclid=Te5t-123"
+          >
+            Arrive from an ad click
+          </button>
+        </div>
+        <div class="group" role="group" aria-labelledby="calls-label">
+          <span id="calls-label" class="label">Call the SDK</span>
+          <button type="button" data-action="track">track('cta_clicked')</button>
+          <button type="button" data-action="identify">identify('u_demo_42')</button>
+          <button type="button" data-action="reset">reset()</button>
+          <button type="button" data-action="request-ok">trackRequest POST 201</button>
+          <button type="button" data-action="request-failed">trackRequest POST 409</button>
+        </div>
+        <div class="group" role="group" aria-labelledby="privacy-label">
+          <span id="privacy-label" class="label">Privacy</span>
+          <label><input id="opt-out" type="checkbox" /> Opt out on this browser</label>
+          <a id="gpc-toggle" href="?gpc=1">Reload with Global Privacy Control on</a>
+        </div>
+      </section>
+
+      <section aria-labelledby="batches-heading">
+        <h2 id="batches-heading">Batches</h2>
+        <p id="status" role="status">
+          A batch leaves after 5 seconds or 10 events, as on a real site. Nothing yet.
+        </p>
+        <ol id="batches"></ol>
+      </section>
+    </main>
+    <script type="module" src="playground.js"></script>
+  </body>
+</html>

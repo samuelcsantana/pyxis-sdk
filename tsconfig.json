@@ -16,6 +16,6 @@
     "skipLibCheck": false,
     "noEmit": true
   },
-  "include": ["src"],
+  "include": ["src", "playground"],
   "exclude": ["src/**/*.test.ts"]
 }

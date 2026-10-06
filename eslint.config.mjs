@@ -5,7 +5,7 @@ import tseslint from 'typescript-eslint';
 import { noComments } from './eslint-rules/no-comments.mjs';
 
 export default defineConfig(
-  { ignores: ['dist/', 'coverage/', 'contract/'] },
+  { ignores: ['dist/', 'coverage/', 'contract/', 'site/', 'test-results/', 'playwright-report/'] },
   {
     linterOptions: { noInlineConfig: true, reportUnusedDisableDirectives: 'error' },
     plugins: { local: { rules: { 'no-comments': noComments } } },
@@ -17,7 +17,12 @@ export default defineConfig(
   {
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.json', './tsconfig.test.json', './scripts/tsconfig.json'],
+        project: [
+          './tsconfig.json',
+          './tsconfig.test.json',
+          './scripts/tsconfig.json',
+          './tsconfig.e2e.json',
+        ],
         tsconfigRootDir: import.meta.dirname,
       },
     },

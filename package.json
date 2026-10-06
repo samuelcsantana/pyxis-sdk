@@ -35,7 +35,7 @@
   "scripts": {
     "prebuild": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "build": "esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --sourcemap --outfile=dist/index.js && tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json && tsc -p scripts/tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json && tsc -p scripts/tsconfig.json && tsc -p tsconfig.e2e.json",
     "test": "vitest run",
     "test:cov": "vitest run --coverage",
     "test:watch": "vitest",
@@ -45,12 +45,15 @@
     "test:tooling": "node --test \"eslint-rules/**/*.test.mjs\" \"scripts/**/*.test.mts\"",
     "size": "node scripts/check-size.mts",
     "prepare": "husky",
-    "contract:sync": "node scripts/contract-sync.mts"
+    "contract:sync": "node scripts/contract-sync.mts",
+    "build:playground": "node scripts/build-playground.mts",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^24.19.1",
     "@vitest/coverage-v8": "^5.0.3",
     "ajv": "^8.20.0",
