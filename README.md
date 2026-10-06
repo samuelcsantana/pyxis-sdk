@@ -17,6 +17,9 @@ without cookies, without personal data and without a single runtime dependency.*
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](package.json)
 
+**[Playground](https://samuelcsantana.github.io/pyxis-sdk/)** — the real tracker in dry-run mode,
+showing every batch it would send, with no request leaving the page.
+
 </div>
 
 > **Status:** early development. The package name `pyxis-analytics` is reserved on npm with a
@@ -164,6 +167,7 @@ npm run build && npm run size
 npm run test:cov       # unit tests in jsdom, 100% coverage required
 npm run test:tooling   # the lint rule and the scripts
 npx vitest run src/contract.test.ts   # the contract test alone
+npm run test:e2e       # the playground in Chromium: batches valid, nothing sent
 ```
 
 Coverage must stay at **100% of statements, branches, functions and lines** of `src/`; CI fails
@@ -181,7 +185,9 @@ src/
 └── index.ts     the public API
 contract/        literal copy of pyxis-api's OpenAPI document (npm run contract:sync)
 eslint-rules/    the local no-comments ESLint rule
-scripts/         comment check, size budget, contract sync
+scripts/         comment check, size budget, contract sync, playground build and server
+playground/      the dry-run playground published on GitHub Pages
+e2e/             Playwright test of the playground
 docs/adr/        architecture decision records
 ```
 
@@ -210,7 +216,7 @@ against the upstream document, so a breaking change in the API shows up here the
 - [x] `track`, `identify`, `reset`, contract test against the API
 - [ ] Release 0.1.0 to npm with provenance
 - [x] `trackRequest`
-- [ ] Playground on GitHub Pages
+- [x] Playground on GitHub Pages
 
 ## Contributing and license
 
