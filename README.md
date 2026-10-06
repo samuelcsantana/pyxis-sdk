@@ -20,6 +20,9 @@ without cookies, without personal data and without a single runtime dependency.*
 **[Playground](https://samuelcsantana.github.io/pyxis-sdk/)** — the real tracker in dry-run mode,
 showing every batch it would send, with no request leaving the page.
 
+**[Dashboard Storybook](https://samuelcsantana.github.io/pyxis-web/)** ·
+**[API reference](https://samuelcsantana.github.io/pyxis-api/)**
+
 </div>
 
 > **Status:** early development. The package name `pyxis-analytics` is reserved on npm with a
