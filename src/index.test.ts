@@ -361,6 +361,59 @@ describe('the public API', () => {
     expect(localStorage.getItem(OPT_OUT_KEY)).toBeNull();
   });
 
+  describe('trackingStatus', () => {
+    it('is on when nothing stops tracking, with or without init', async () => {
+      const pyxis = await loadFresh();
+
+      expect(pyxis.trackingStatus()).toBe('on');
+      pyxis.init(OPTIONS);
+      expect(pyxis.trackingStatus()).toBe('on');
+    });
+
+    it('follows optOut and optIn', async () => {
+      const pyxis = await loadFresh();
+
+      pyxis.optOut();
+      expect(pyxis.trackingStatus()).toBe('opted-out');
+      pyxis.optIn();
+      expect(pyxis.trackingStatus()).toBe('on');
+    });
+
+    it('reads an opt-out kept from an earlier visit', async () => {
+      localStorage.setItem(OPT_OUT_KEY, OPT_OUT_VALUE);
+      const pyxis = await loadFresh();
+
+      expect(pyxis.trackingStatus()).toBe('opted-out');
+    });
+
+    it.each([
+      ['Global Privacy Control', 'globalPrivacyControl', true],
+      ['Do Not Track', 'doNotTrack', '1'],
+    ])(
+      'is blocked-by-browser under %s, whatever the visitor chose',
+      async (_label, name, value) => {
+        setNavigatorValue(name, value);
+        const pyxis = await loadFresh();
+
+        expect(pyxis.trackingStatus()).toBe('blocked-by-browser');
+        pyxis.optOut();
+        expect(pyxis.trackingStatus()).toBe('blocked-by-browser');
+      },
+    );
+
+    it('answers on instead of throwing when the signals cannot be read', async () => {
+      Object.defineProperty(navigator, 'globalPrivacyControl', {
+        get: (): never => {
+          throw new Error('unreadable signal');
+        },
+        configurable: true,
+      });
+      const pyxis = await loadFresh();
+
+      expect(pyxis.trackingStatus()).toBe('on');
+    });
+  });
+
   describe('with storage blocked', () => {
     const blocked = (): never => {
       throw new Error('storage is blocked');
@@ -388,6 +441,7 @@ describe('the public API', () => {
       pyxis.init(OPTIONS);
 
       expect(listensForPageHide()).toBe(false);
+      expect(pyxis.trackingStatus()).toBe('opted-out');
     });
 
     it('starts on a later init once the visitor opted back in', async () => {
@@ -436,6 +490,7 @@ describe('the public API', () => {
         pyxis.optIn();
       }).not.toThrow();
       expect(localStorage.getItem(OPT_OUT_KEY)).toBeNull();
+      expect(pyxis.trackingStatus()).toBe('on');
     });
   });
 });
