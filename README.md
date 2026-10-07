@@ -68,7 +68,7 @@ reset();
 | `track(name, properties)` | A named event with up to 10 short properties                                     |
 | `identify(userId)`        | Attaches the site's internal user id to later events and links the current visit |
 | `reset()`                 | Sends what is queued, then starts a new anonymous visit (for sign-out)           |
-| `optOut()` / `optIn()`    | Stops or resumes tracking in this browser                                        |
+| `optOut()` / `optIn()`    | Stops or resumes tracking in this browser, effective at once in this page        |
 | `trackingStatus()`        | `'on'`, `'opted-out'` or `'blocked-by-browser'`, for an opt-out switch           |
 | `trackRequest(request)`   | The method, route template, status and duration of an HTTP call                  |
 
@@ -128,6 +128,9 @@ status `0` means no response arrived. An optional `errorCode` carries your API's
   keeps beyond the tab, so the choice holds on later visits. With storage blocked it still holds
   for the rest of the page. Events not yet sent are dropped: the queue leaves every 5 seconds, or
   with `sendBeacon` when the page is hidden.
+- `optIn()` removes the marker and, if `init()` already ran, starts measuring in the same page,
+  beginning with a page view of the current page. Under Global Privacy Control or Do Not Track it
+  only removes the marker.
 - `trackingStatus()` tells a site's switch which state it is in. Global Privacy Control and Do Not
   Track win over the visitor's choice, since a switch cannot turn them off; outside a browser
   (server rendering) it answers `'on'`, so read it again on the client.
