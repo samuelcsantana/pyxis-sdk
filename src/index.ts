@@ -13,7 +13,12 @@ import {
   checkTrackedRequest,
   type TrackedRequest,
 } from './core/tracked-request.js';
-import { isTrackingAllowed, OPT_OUT_KEY, OPT_OUT_VALUE } from './core/privacy.js';
+import {
+  isTrackingAllowed,
+  OPT_OUT_KEY,
+  OPT_OUT_VALUE,
+  type PrivacySignals,
+} from './core/privacy.js';
 import { startPageViews } from './page-views.js';
 import { createTracker, type Tracker } from './tracker.js';
 
@@ -28,6 +33,7 @@ let debugEnabled = false;
 let tracker: Tracker | undefined;
 let stoppers: readonly (() => void)[] = [];
 let pathRules: readonly string[] = [];
+let optedOutThisPage = false;
 
 function bestEffort(action: () => void): void {
   try {
@@ -51,6 +57,11 @@ function currentPath(): string {
 
 function localStore() {
   return webStore(() => window.localStorage);
+}
+
+function currentPrivacySignals(): PrivacySignals {
+  const signals = readPrivacySignals(navigator, window, localStore());
+  return { ...signals, optedOut: signals.optedOut || optedOutThisPage };
 }
 
 function stop(): void {
@@ -82,7 +93,7 @@ export function init(options: PyxisOptions): void {
     if (!resolution.ok) {
       return;
     }
-    if (!isTrackingAllowed(readPrivacySignals(navigator, window, localStore()))) {
+    if (!isTrackingAllowed(currentPrivacySignals())) {
       return;
     }
     const current = createTracker(resolution.options, createBrowserDependencies());
@@ -163,6 +174,7 @@ export function optOut(): void {
     if (!isBrowserLike(globalThis)) {
       return;
     }
+    optedOutThisPage = true;
     localStore().write(OPT_OUT_KEY, OPT_OUT_VALUE);
     stop();
   });
@@ -171,6 +183,7 @@ export function optOut(): void {
 export function optIn(): void {
   bestEffort(() => {
     if (isBrowserLike(globalThis)) {
+      optedOutThisPage = false;
       localStore().remove(OPT_OUT_KEY);
     }
   });

@@ -361,6 +361,46 @@ describe('the public API', () => {
     expect(localStorage.getItem(OPT_OUT_KEY)).toBeNull();
   });
 
+  describe('with storage blocked', () => {
+    const blocked = (): never => {
+      throw new Error('storage is blocked');
+    };
+    let blockedSpies: MockInstance[] = [];
+
+    beforeEach(() => {
+      blockedSpies = [
+        vi.spyOn(Storage.prototype, 'getItem').mockImplementation(blocked),
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(blocked),
+        vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(blocked),
+      ];
+    });
+
+    afterEach(() => {
+      blockedSpies.forEach((spy) => {
+        spy.mockRestore();
+      });
+    });
+
+    it('keeps an opt-out for the rest of the page', async () => {
+      const pyxis = await loadFresh();
+
+      pyxis.optOut();
+      pyxis.init(OPTIONS);
+
+      expect(listensForPageHide()).toBe(false);
+    });
+
+    it('starts on a later init once the visitor opted back in', async () => {
+      const pyxis = await loadFresh();
+
+      pyxis.optOut();
+      pyxis.optIn();
+      pyxis.init(OPTIONS);
+
+      expect(listensForPageHide()).toBe(true);
+    });
+  });
+
   it('never throws into the page, and reports the error only in debug mode', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const brokenOptions = (debug?: object) => ({
