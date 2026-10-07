@@ -1,4 +1,3 @@
-import { OPT_OUT_KEY, OPT_OUT_VALUE } from '../src/core/privacy.js';
 import {
   type Batch,
   identify,
@@ -7,6 +6,7 @@ import {
   optOut,
   reset,
   track,
+  trackingStatus,
   trackRequest,
 } from '../src/index.js';
 
@@ -28,6 +28,7 @@ const batchList = required('batches', HTMLOListElement);
 const status = required('status', HTMLParagraphElement);
 const optOutBox = required('opt-out', HTMLInputElement);
 const gpcToggle = required('gpc-toggle', HTMLAnchorElement);
+const trackingStatusText = required('tracking-status', HTMLElement);
 
 let shown = 0;
 
@@ -78,8 +79,15 @@ const ACTIONS: Readonly<Record<string, () => void>> = {
   },
 };
 
+function showTrackingStatus(): void {
+  const current = trackingStatus();
+  trackingStatusText.textContent = `trackingStatus(): '${current}'`;
+  optOutBox.checked = current === 'opted-out';
+  optOutBox.disabled = current === 'blocked-by-browser';
+}
+
 simulateGlobalPrivacyControl();
-optOutBox.checked = localStorage.getItem(OPT_OUT_KEY) === OPT_OUT_VALUE;
+showTrackingStatus();
 init({
   key: PLAYGROUND_KEY,
   endpoint: PLAYGROUND_ENDPOINT,
@@ -105,4 +113,5 @@ optOutBox.addEventListener('change', () => {
   } else {
     optIn();
   }
+  showTrackingStatus();
 });

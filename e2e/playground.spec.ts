@@ -77,6 +77,25 @@ test('sends nothing at all with Global Privacy Control on', async ({ page }) => 
 
   await expect(page.getByRole('status')).toHaveText(/Global Privacy Control is on/);
   await expect(page.locator('#batches > li')).toHaveCount(0);
+  await expect(page.locator('#tracking-status')).toHaveText(
+    "trackingStatus(): 'blocked-by-browser'",
+  );
+  await expect(page.getByLabel('Opt out on this browser')).toBeDisabled();
+});
+
+test('shows the tracking status following the opt-out box, across a reload', async ({ page }) => {
+  await page.goto('/');
+  const status = page.locator('#tracking-status');
+  const optOutBox = page.getByLabel('Opt out on this browser');
+
+  await expect(status).toHaveText("trackingStatus(): 'on'");
+  await optOutBox.check();
+  await expect(status).toHaveText("trackingStatus(): 'opted-out'");
+  await page.reload();
+  await expect(optOutBox).toBeChecked();
+  await expect(status).toHaveText("trackingStatus(): 'opted-out'");
+  await optOutBox.uncheck();
+  await expect(status).toHaveText("trackingStatus(): 'on'");
 });
 
 test('stops queueing once the visitor opts out, and remembers it', async ({ page }) => {
