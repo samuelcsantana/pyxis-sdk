@@ -18,12 +18,15 @@ import {
   OPT_OUT_KEY,
   OPT_OUT_VALUE,
   type PrivacySignals,
+  type TrackingStatus,
+  trackingStatusOf,
 } from './core/privacy.js';
 import { startPageViews } from './page-views.js';
 import { createTracker, type Tracker } from './tracker.js';
 
 export type { Batch, BatchAttribution, BatchEvent, PropertyValue } from './core/batch.js';
 export type { PyxisDebugOptions, PyxisOptions } from './core/options.js';
+export type { TrackingStatus } from './core/privacy.js';
 export type { RequestMethod, TrackedRequest } from './core/tracked-request.js';
 
 export type Properties = Readonly<Record<string, PropertyValue>>;
@@ -35,14 +38,19 @@ let stoppers: readonly (() => void)[] = [];
 let pathRules: readonly string[] = [];
 let optedOutThisPage = false;
 
-function bestEffort(action: () => void): void {
+function guarded<Result>(action: () => Result, fallback: Result): Result {
   try {
-    action();
+    return action();
   } catch (error) {
     if (debugEnabled) {
       console.warn('[pyxis] ignored an internal error', error);
     }
+    return fallback;
   }
+}
+
+function bestEffort(action: () => void): void {
+  guarded(action, undefined);
 }
 
 function debugWarn(message: string): void {
@@ -178,6 +186,13 @@ export function optOut(): void {
     localStore().write(OPT_OUT_KEY, OPT_OUT_VALUE);
     stop();
   });
+}
+
+export function trackingStatus(): TrackingStatus {
+  return guarded(
+    () => (isBrowserLike(globalThis) ? trackingStatusOf(currentPrivacySignals()) : 'on'),
+    'on',
+  );
 }
 
 export function optIn(): void {

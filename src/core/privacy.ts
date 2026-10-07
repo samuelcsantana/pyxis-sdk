@@ -15,6 +15,15 @@ export function isDoNotTrack(values: readonly (string | null | undefined)[]): bo
   );
 }
 
+export type TrackingStatus = 'on' | 'opted-out' | 'blocked-by-browser';
+
+export function trackingStatusOf(signals: PrivacySignals): TrackingStatus {
+  if (signals.globalPrivacyControl || signals.doNotTrack) {
+    return 'blocked-by-browser';
+  }
+  return signals.optedOut ? 'opted-out' : 'on';
+}
+
 export function isTrackingAllowed(signals: PrivacySignals): boolean {
-  return !signals.globalPrivacyControl && !signals.doNotTrack && !signals.optedOut;
+  return trackingStatusOf(signals) === 'on';
 }
