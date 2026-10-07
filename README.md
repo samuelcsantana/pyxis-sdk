@@ -69,6 +69,7 @@ reset();
 | `identify(userId)`        | Attaches the site's internal user id to later events and links the current visit |
 | `reset()`                 | Sends what is queued, then starts a new anonymous visit (for sign-out)           |
 | `optOut()` / `optIn()`    | Stops or resumes tracking in this browser                                        |
+| `trackingStatus()`        | `'on'`, `'opted-out'` or `'blocked-by-browser'`, for an opt-out switch           |
 | `trackRequest(request)`   | The method, route template, status and duration of an HTTP call                  |
 
 | Option          | Default  | Meaning                                                                                          |
@@ -124,7 +125,12 @@ status `0` means no response arrived. An optional `errorCode` carries your API's
   become a single `from_ad_click: true`.
 - Global Privacy Control and Do Not Track switch the tracker off.
 - `optOut()` writes a single `pyxis:opt-out` marker to `localStorage`, the only thing the SDK
-  keeps beyond the tab, so the choice holds on later visits.
+  keeps beyond the tab, so the choice holds on later visits. With storage blocked it still holds
+  for the rest of the page. Events not yet sent are dropped: the queue leaves every 5 seconds, or
+  with `sendBeacon` when the page is hidden.
+- `trackingStatus()` tells a site's switch which state it is in. Global Privacy Control and Do Not
+  Track win over the visitor's choice, since a switch cannot turn them off; outside a browser
+  (server rendering) it answers `'on'`, so read it again on the client.
 - Batches are sent with `credentials: "omit"`: no cookie of any domain travels with them.
 - No key configured means nothing runs, which keeps tests and local development clean.
 
@@ -217,9 +223,10 @@ against the upstream document, so a breaking change in the API shows up here the
 - [x] Core: queue, batching, transport, retry, session, privacy signals, opt-out
 - [x] Page views: History API, path templates, query sanitizing, attribution
 - [x] `track`, `identify`, `reset`, contract test against the API
-- [ ] Release 0.1.0 to npm with provenance
+- [x] Release 0.1.0 to npm with provenance
 - [x] `trackRequest`
 - [x] Playground on GitHub Pages
+- [x] `trackingStatus()` for opt-out switches
 
 ## Contributing and license
 
