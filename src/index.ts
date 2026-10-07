@@ -31,7 +31,7 @@ export type { RequestMethod, TrackedRequest } from './core/tracked-request.js';
 
 export type Properties = Readonly<Record<string, PropertyValue>>;
 
-let started = false;
+let initOptions: PyxisOptions | undefined;
 let debugEnabled = false;
 let tracker: Tracker | undefined;
 let stoppers: readonly (() => void)[] = [];
@@ -90,29 +90,30 @@ function startAutoPageViews(current: Tracker, pathRules: readonly string[]): () 
   });
 }
 
+function start(options: PyxisOptions): void {
+  const resolution = resolveOptions(options);
+  if (!resolution.ok || !isTrackingAllowed(currentPrivacySignals())) {
+    return;
+  }
+  const current = createTracker(resolution.options, createBrowserDependencies());
+  pathRules = resolution.options.pathRules;
+  tracker = current;
+  const stopFlushingOnHide = onPageHide(() => {
+    current.flush(true);
+  });
+  stoppers = resolution.options.autoPageViews
+    ? [stopFlushingOnHide, startAutoPageViews(current, pathRules)]
+    : [stopFlushingOnHide];
+}
+
 export function init(options: PyxisOptions): void {
   bestEffort(() => {
-    if (started || !isBrowserLike(globalThis)) {
+    if (initOptions !== undefined || !isBrowserLike(globalThis)) {
       return;
     }
-    started = true;
+    initOptions = options;
     debugEnabled = options.debug !== undefined;
-    const resolution = resolveOptions(options);
-    if (!resolution.ok) {
-      return;
-    }
-    if (!isTrackingAllowed(currentPrivacySignals())) {
-      return;
-    }
-    const current = createTracker(resolution.options, createBrowserDependencies());
-    pathRules = resolution.options.pathRules;
-    tracker = current;
-    const stopFlushingOnHide = onPageHide(() => {
-      current.flush(true);
-    });
-    stoppers = resolution.options.autoPageViews
-      ? [stopFlushingOnHide, startAutoPageViews(current, pathRules)]
-      : [stopFlushingOnHide];
+    start(options);
   });
 }
 
@@ -197,9 +198,13 @@ export function trackingStatus(): TrackingStatus {
 
 export function optIn(): void {
   bestEffort(() => {
-    if (isBrowserLike(globalThis)) {
-      optedOutThisPage = false;
-      localStore().remove(OPT_OUT_KEY);
+    if (!isBrowserLike(globalThis)) {
+      return;
+    }
+    optedOutThisPage = false;
+    localStore().remove(OPT_OUT_KEY);
+    if (initOptions !== undefined && tracker === undefined) {
+      start(initOptions);
     }
   });
 }

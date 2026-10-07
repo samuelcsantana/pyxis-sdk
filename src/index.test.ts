@@ -352,13 +352,62 @@ describe('the public API', () => {
     expect(listensForPageHide()).toBe(false);
   });
 
-  it('opts back in by removing the marker', async () => {
+  it('opts back in by removing the marker, starting nothing before init', async () => {
     localStorage.setItem(OPT_OUT_KEY, OPT_OUT_VALUE);
     const pyxis = await loadFresh();
 
     pyxis.optIn();
 
     expect(localStorage.getItem(OPT_OUT_KEY)).toBeNull();
+    expect(listensForPageHide()).toBe(false);
+  });
+
+  it('resumes measuring in the same page when the visitor opts back in', async () => {
+    const pyxis = await loadFresh();
+    pyxis.init(OPTIONS);
+    pyxis.optOut();
+
+    pyxis.optIn();
+    window.history.pushState(null, '', '/pricing');
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(sentEvents(fetchSpy)).toContainEqual(
+      expect.objectContaining({ name: 'page_view', path: '/pricing' }),
+    );
+  });
+
+  it('records the page it resumed on when init found an opt-out', async () => {
+    localStorage.setItem(OPT_OUT_KEY, OPT_OUT_VALUE);
+    window.history.replaceState(null, '', '/privacy');
+    const pyxis = await loadFresh();
+    pyxis.init(OPTIONS);
+    expect(listensForPageHide()).toBe(false);
+
+    pyxis.optIn();
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(sentEvents(fetchSpy)).toEqual([
+      expect.objectContaining({ name: 'page_view', path: '/privacy' }),
+    ]);
+  });
+
+  it('keeps one tracker when opting in while it already runs', async () => {
+    const pyxis = await loadFresh();
+    pyxis.init(OPTIONS);
+
+    pyxis.optIn();
+
+    expect(addListener.mock.calls.filter(([type]) => type === 'visibilitychange')).toHaveLength(1);
+  });
+
+  it('stays off after opting in while the browser blocks tracking', async () => {
+    setNavigatorValue('globalPrivacyControl', true);
+    const pyxis = await loadFresh();
+    pyxis.init(OPTIONS);
+
+    pyxis.optIn();
+
+    expect(listensForPageHide()).toBe(false);
   });
 
   describe('trackingStatus', () => {
