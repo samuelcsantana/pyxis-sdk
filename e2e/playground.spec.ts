@@ -108,3 +108,16 @@ test('stops queueing once the visitor opts out, and remembers it', async ({ page
   await page.reload();
   await expect(page.getByRole('checkbox', { name: 'Opt out on this browser' })).toBeChecked();
 });
+
+test('resumes queueing in the same page once the visitor opts back in', async ({ page }) => {
+  await page.goto('/');
+  const optOutBox = page.getByRole('checkbox', { name: 'Opt out on this browser' });
+  await optOutBox.check();
+  await page.reload();
+
+  await optOutBox.uncheck();
+  await exercise(page);
+
+  await expect(page.locator('#batches > li').first()).toBeVisible();
+  expect(JSON.stringify(await shownBatches(page))).toContain('/orders/:id');
+});
