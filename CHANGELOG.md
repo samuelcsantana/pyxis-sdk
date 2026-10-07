@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.2.0](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.1.0...v0.2.0) (2026-10-07)
+
+
+### Features
+
+* **playground:** show trackingStatus() next to the opt-out box ([20ea585](https://github.com/samuelcsantana/pyxis-sdk/commit/20ea585cda7f3b042c362416b0f29959c6aa702c))
+* **privacy:** export trackingStatus() ([59ef2cf](https://github.com/samuelcsantana/pyxis-sdk/commit/59ef2cf0522b6ba91f4f125f1e91d20a0bafe5b5))
+* **privacy:** resume measuring in the same page on optIn() ([f08b6cc](https://github.com/samuelcsantana/pyxis-sdk/commit/f08b6ccb25b70d086944bc2345deb39943887571))
+
+
+### Bug Fixes
+
+* **privacy:** keep an opt-out for the rest of the page when storage is blocked ([7e65908](https://github.com/samuelcsantana/pyxis-sdk/commit/7e659085fd5528a1b070e60a4981b8a8d04f06a9))
+
+
+### Documentation
+
+* **readme:** document trackingStatus() and what an opt-out drops ([73acdf4](https://github.com/samuelcsantana/pyxis-sdk/commit/73acdf408deb331336df835e0bb6323b8dd5966f))
+* **readme:** say that optIn() resumes in the same page ([50053a8](https://github.com/samuelcsantana/pyxis-sdk/commit/50053a83becd0ec6360976385316e515f4842356))
+
 ## 0.1.0 (2026-10-06)
 
 

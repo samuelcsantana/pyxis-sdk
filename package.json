@@ -1,6 +1,6 @@
 {
   "name": "pyxis-analytics",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Privacy-first product analytics tracker for the browser: no cookies, no personal data, zero dependencies.",
   "keywords": [
     "analytics",
