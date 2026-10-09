@@ -25,10 +25,9 @@ showing every batch it would send, with no request leaving the page.
 
 </div>
 
-> **Status:** early development. The package name `pyxis-analytics` is reserved on npm with a
-> `0.0.0` placeholder; the first usable version is `0.1.0`, published from GitHub Actions with npm
-> provenance. On `main` every function below works, validated against the API's contract; until
-> 0.1.0 is released, the published `0.0.0` is only the placeholder (see [Roadmap](#roadmap)).
+> **Status:** `pyxis-analytics` is on npm, every release published from GitHub Actions with
+> provenance, and measures a site in production. Every function below is validated against the
+> API's contract on each push (see [Roadmap](#roadmap)).
 
 ## Ecosystem
 
