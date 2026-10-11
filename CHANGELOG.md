@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.1](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.2.0...v0.2.1) (2026-10-11)
+
+
+### Bug Fixes
+
+* **attribution:** stop treating fbclid as an ad click ([d86c688](https://github.com/samuelcsantana/pyxis-sdk/commit/d86c688f4f153e9efee44a452ba67f0a0c916a47))
+
+
+### Documentation
+
+* **readme:** say why fbclid is not an ad click id ([eaff961](https://github.com/samuelcsantana/pyxis-sdk/commit/eaff961f580c916608d278b42e1b74c491ff86a2))
+* **readme:** state the published status ([2558c31](https://github.com/samuelcsantana/pyxis-sdk/commit/2558c310207b85315ef733c8fe2e6fad41017a25))
+
 ## [0.2.0](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.1.0...v0.2.0) (2026-10-07)
 
 
