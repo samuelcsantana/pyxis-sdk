@@ -121,7 +121,8 @@ status `0` means no response arrived. An optional `errorCode` carries your API's
 - Paths are reduced to templates (`/orders/9f1c…` becomes `/orders/:id`); emails and long digit
   runs in a path never leave the browser.
 - Query strings are dropped, except `utm_source`, `utm_medium` and `utm_campaign`; ad click ids
-  become a single `from_ad_click: true`.
+  become a single `from_ad_click: true`. Meta's `fbclid` is not counted as one: Meta adds it to
+  every link that leaves Facebook or Instagram, ads or not.
 - Global Privacy Control and Do Not Track switch the tracker off.
 - `optOut()` writes a single `pyxis:opt-out` marker to `localStorage`, the only thing the SDK
   keeps beyond the tab, so the choice holds on later visits. With storage blocked it still holds
