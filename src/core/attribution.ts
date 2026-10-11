@@ -9,7 +9,6 @@ export const AD_CLICK_PARAMETERS = [
   'gclid',
   'gbraid',
   'wbraid',
-  'fbclid',
   'msclkid',
   'ttclid',
   'li_fat_id',
