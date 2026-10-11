@@ -5,7 +5,7 @@ import type { EventInput, Tracker } from './tracker.js';
 function setup(referrer = 'https://www.google.com/') {
   let location: PageLocation = {
     pathname: '/',
-    search: '?utm_source=newsletter&fbclid=abc',
+    search: '?utm_source=newsletter&gclid=abc',
     hostname: 'shop.example.com',
   };
   const enqueued: EventInput[] = [];

@@ -38,6 +38,13 @@ describe('buildAttribution', () => {
     },
   );
 
+  it('does not treat fbclid as an ad click, since Meta adds it to organic links too', () => {
+    expect(attribution('?utm_source=instagram&utm_medium=bio&fbclid=PAZXh0bgNhZW0')).toEqual({
+      utm: { source: 'instagram', medium: 'bio' },
+      from_ad_click: false,
+    });
+  });
+
   it('reports no ad click and no utm on a plain URL', () => {
     expect(attribution('')).toEqual({ from_ad_click: false });
   });
