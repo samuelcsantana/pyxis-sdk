@@ -45,6 +45,13 @@ tab, URLs reduced to path templates, query strings dropped except campaign tags,
 track" signals honored before anything is queued. It is small enough to forget about: the budget
 is 5 KB gzipped, enforced in CI.
 
+Read more: [why Pyxis was built and what it never stores][post], the introduction post on the
+author's blog, also in [Portuguese][post-pt] and [Spanish][post-es].
+
+[post]: https://www.samuelsantana.dev/en/blog/pyxis-analytics-without-cookies-ip-or-personal-data
+[post-pt]: https://www.samuelsantana.dev/blog/pyxis-analytics-sem-cookie-sem-ip-sem-dado-pessoal
+[post-es]: https://www.samuelsantana.dev/es/blog/pyxis-analytics-sin-cookies-sin-ip-sin-datos-personales
+
 ## API
 
 ```ts
