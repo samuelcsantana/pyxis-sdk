@@ -41,6 +41,7 @@ test('runs in a Chromium that does not report automation, as a visitor browser d
   await page.goto('/');
 
   expect(await page.evaluate(() => navigator.webdriver)).toBe(false);
+  await expect(page.getByRole('status')).not.toHaveText(/automation/);
 });
 
 test('shows the batches it would send, valid against the API contract, and sends nothing', async ({
