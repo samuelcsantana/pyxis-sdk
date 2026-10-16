@@ -31,11 +31,12 @@ showing every batch it would send, with no request leaving the page.
 
 ## Ecosystem
 
-| Repository                                               | Role                                                         |
-| -------------------------------------------------------- | ------------------------------------------------------------ |
-| [pyxis-api](https://github.com/samuelcsantana/pyxis-api) | Ingestion, dashboard sign-in and queries, erasure, retention |
-| **pyxis-sdk** (this one)                                 | Browser tracker published to npm as `pyxis-analytics`        |
-| [pyxis-web](https://github.com/samuelcsantana/pyxis-web) | The dashboard: overview, funnels, features, requests         |
+| Repository                                               | Role                                                             |
+| -------------------------------------------------------- | ---------------------------------------------------------------- |
+| [pyxis-api](https://github.com/samuelcsantana/pyxis-api) | Ingestion, dashboard sign-in and queries, erasure, retention     |
+| **pyxis-sdk** (this one)                                 | Browser tracker published to npm as `pyxis-analytics`            |
+| [pyxis-web](https://github.com/samuelcsantana/pyxis-web) | The dashboard: overview, funnels, features, requests             |
+| [pyxis-mcp](https://github.com/samuelcsantana/pyxis-mcp) | MCP server: Claude and other agents read the dashboard's numbers |
 
 ## Why it exists
 
