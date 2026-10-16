@@ -7,6 +7,7 @@ export interface PrivacySignals {
   readonly globalPrivacyControl: boolean;
   readonly doNotTrack: boolean;
   readonly optedOut: boolean;
+  readonly automated: boolean;
 }
 
 export function isDoNotTrack(values: readonly (string | null | undefined)[]): boolean {
@@ -25,5 +26,5 @@ export function trackingStatusOf(signals: PrivacySignals): TrackingStatus {
 }
 
 export function isTrackingAllowed(signals: PrivacySignals): boolean {
-  return trackingStatusOf(signals) === 'on';
+  return !signals.automated && trackingStatusOf(signals) === 'on';
 }

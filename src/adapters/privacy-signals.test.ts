@@ -9,6 +9,7 @@ describe('readPrivacySignals', () => {
       globalPrivacyControl: false,
       doNotTrack: false,
       optedOut: false,
+      automated: false,
     });
   });
 
@@ -28,5 +29,11 @@ describe('readPrivacySignals', () => {
     store.write(OPT_OUT_KEY, OPT_OUT_VALUE);
 
     expect(readPrivacySignals({}, {}, store).optedOut).toBe(true);
+  });
+
+  it('reads automation from navigator.webdriver, only when it is true', () => {
+    expect(readPrivacySignals({ webdriver: true }, {}, memoryStore()).automated).toBe(true);
+    expect(readPrivacySignals({ webdriver: false }, {}, memoryStore()).automated).toBe(false);
+    expect(readPrivacySignals({ webdriver: 'true' }, {}, memoryStore()).automated).toBe(false);
   });
 });
