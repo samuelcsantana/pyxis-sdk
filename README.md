@@ -69,15 +69,15 @@ identify('user_8f2c');
 reset();
 ```
 
-| Function                  | Behavior                                                                         |
-| ------------------------- | -------------------------------------------------------------------------------- |
-| `init(options)`           | Starts the tracker and records page views on navigation; no key means no-op      |
-| `track(name, properties)` | A named event with up to 10 short properties                                     |
-| `identify(userId)`        | Attaches the site's internal user id to later events and links the current visit |
-| `reset()`                 | Sends what is queued, then starts a new anonymous visit (for sign-out)           |
-| `optOut()` / `optIn()`    | Stops or resumes tracking in this browser, effective at once in this page        |
-| `trackingStatus()`        | `'on'`, `'opted-out'` or `'blocked-by-browser'`, for an opt-out switch           |
-| `trackRequest(request)`   | The method, route template, status and duration of an HTTP call                  |
+| Function                  | Behavior                                                                                  |
+| ------------------------- | ----------------------------------------------------------------------------------------- |
+| `init(options)`           | Starts the tracker and records page views on navigation; no key or automation means no-op |
+| `track(name, properties)` | A named event with up to 10 short properties                                              |
+| `identify(userId)`        | Attaches the site's internal user id to later events and links the current visit          |
+| `reset()`                 | Sends what is queued, then starts a new anonymous visit (for sign-out)                    |
+| `optOut()` / `optIn()`    | Stops or resumes tracking in this browser, effective at once in this page                 |
+| `trackingStatus()`        | `'on'`, `'opted-out'` or `'blocked-by-browser'`, for an opt-out switch                    |
+| `trackRequest(request)`   | The method, route template, status and duration of an HTTP call                           |
 
 | Option          | Default  | Meaning                                                                                          |
 | --------------- | -------- | ------------------------------------------------------------------------------------------------ |
@@ -132,16 +132,22 @@ status `0` means no response arrived. An optional `errorCode` carries your API's
   become a single `from_ad_click: true`. Meta's `fbclid` is not counted as one: Meta adds it to
   every link that leaves Facebook or Instagram, ads or not.
 - Global Privacy Control and Do Not Track switch the tracker off.
+- A browser driven by automation (`navigator.webdriver` is `true`, as under WebDriver or
+  Playwright) is not measured: `init()` does nothing, as without a key, and says why when `debug`
+  is set. To see events in your own end-to-end tests, launch Chromium with
+  `--disable-blink-features=AutomationControlled`, which makes `navigator.webdriver` false
+  ([ADR 0005](docs/adr/0005-skip-automated-browsers.md)).
 - `optOut()` writes a single `pyxis:opt-out` marker to `localStorage`, the only thing the SDK
   keeps beyond the tab, so the choice holds on later visits. With storage blocked it still holds
   for the rest of the page. Events not yet sent are dropped: the queue leaves every 5 seconds, or
   with `sendBeacon` when the page is hidden.
 - `optIn()` removes the marker and, if `init()` already ran, starts measuring in the same page,
-  beginning with a page view of the current page. Under Global Privacy Control or Do Not Track it
-  only removes the marker.
+  beginning with a page view of the current page. Under Global Privacy Control, Do Not Track or
+  automation it only removes the marker.
 - `trackingStatus()` tells a site's switch which state it is in. Global Privacy Control and Do Not
   Track win over the visitor's choice, since a switch cannot turn them off; outside a browser
-  (server rendering) it answers `'on'`, so read it again on the client.
+  (server rendering) it answers `'on'`, so read it again on the client. Automation does not change
+  it: the switch is for people, and their browsers block nothing.
 - Batches are sent with `credentials: "omit"`: no cookie of any domain travels with them.
 - No key configured means nothing runs, which keeps tests and local development clean.
 
@@ -187,7 +193,7 @@ npm run build && npm run size
 npm run test:cov       # unit tests in jsdom, 100% coverage required
 npm run test:tooling   # the lint rule and the scripts
 npx vitest run src/contract.test.ts   # the contract test alone
-npm run test:e2e       # the playground in Chromium: batches valid, nothing sent
+npm run test:e2e       # the playground in Chromium: batches valid, nothing sent, none if automated
 ```
 
 Coverage must stay at **100% of statements, branches, functions and lines** of `src/`; CI fails
@@ -227,6 +233,7 @@ against the upstream document, so a breaking change in the API shows up here the
 | [0002](docs/adr/0002-functional-core.md)               | Functional core, thin shell                      |
 | [0003](docs/adr/0003-zero-dependencies.md)             | Zero runtime dependencies and a 3 KB size budget |
 | [0004](docs/adr/0004-five-kilobyte-budget.md)          | Raise the size budget to 5 KB                    |
+| [0005](docs/adr/0005-skip-automated-browsers.md)       | Do not measure browsers driven by automation     |
 
 ## Roadmap
 
@@ -238,6 +245,7 @@ against the upstream document, so a breaking change in the API shows up here the
 - [x] `trackRequest`
 - [x] Playground on GitHub Pages
 - [x] `trackingStatus()` for opt-out switches
+- [x] Browsers driven by automation are not measured
 
 ## Contributing and license
 
