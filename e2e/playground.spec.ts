@@ -2,8 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, type Page, test } from '@playwright/test';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
-
-const FLUSH_DELAY_MS = 5000;
+import { exercise } from './playground-page.ts';
 
 function batchValidator() {
   const ajv = new Ajv2020.default({ strict: false, allErrors: true });
@@ -30,17 +29,6 @@ function recordRequests(page: Page): string[] {
     urls.push(request.url());
   });
   return urls;
-}
-
-async function exercise(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Open /pricing' }).click();
-  await page.getByRole('button', { name: 'Open /orders/8213' }).click();
-  await page.getByRole('button', { name: 'Arrive from an ad click' }).click();
-  await page.getByRole('button', { name: "track('cta_clicked')" }).click();
-  await page.getByRole('button', { name: "identify('u_demo_42')" }).click();
-  await page.getByRole('button', { name: 'trackRequest POST 201' }).click();
-  await page.getByRole('button', { name: 'trackRequest POST 409' }).click();
-  await page.clock.runFor(FLUSH_DELAY_MS);
 }
 
 test.beforeEach(async ({ page }) => {
