@@ -92,7 +92,14 @@ function startAutoPageViews(current: Tracker, pathRules: readonly string[]): () 
 
 function start(options: PyxisOptions): void {
   const resolution = resolveOptions(options);
-  if (!resolution.ok || !isTrackingAllowed(currentPrivacySignals())) {
+  if (!resolution.ok) {
+    return;
+  }
+  const signals = currentPrivacySignals();
+  if (signals.automated) {
+    debugWarn('measuring is off in a browser driven by automation (navigator.webdriver is true)');
+  }
+  if (!isTrackingAllowed(signals)) {
     return;
   }
   const current = createTracker(resolution.options, createBrowserDependencies());

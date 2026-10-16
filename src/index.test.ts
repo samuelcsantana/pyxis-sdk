@@ -43,6 +43,7 @@ describe('the public API', () => {
     sessionStorage.clear();
     setNavigatorValue('globalPrivacyControl', undefined);
     setNavigatorValue('doNotTrack', null);
+    setNavigatorValue('webdriver', undefined);
     setNavigatorValue('sendBeacon', undefined);
     fetchSpy.mockClear();
   });
@@ -101,6 +102,12 @@ describe('the public API', () => {
       'an earlier opt-out',
       () => {
         localStorage.setItem(OPT_OUT_KEY, OPT_OUT_VALUE);
+      },
+    ],
+    [
+      'a browser driven by automation',
+      () => {
+        setNavigatorValue('webdriver', true);
       },
     ],
   ])('stays inert under %s', async (_label, arrange) => {
@@ -400,14 +407,30 @@ describe('the public API', () => {
     expect(addListener.mock.calls.filter(([type]) => type === 'visibilitychange')).toHaveLength(1);
   });
 
-  it('stays off after opting in while the browser blocks tracking', async () => {
-    setNavigatorValue('globalPrivacyControl', true);
+  it.each([
+    ['while the browser blocks tracking', 'globalPrivacyControl'],
+    ['in a browser driven by automation', 'webdriver'],
+  ])('stays off after opting in %s', async (_label, signal) => {
+    setNavigatorValue(signal, true);
     const pyxis = await loadFresh();
     pyxis.init(OPTIONS);
 
     pyxis.optIn();
 
     expect(listensForPageHide()).toBe(false);
+  });
+
+  it('explains in debug mode why a browser driven by automation records nothing', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    setNavigatorValue('webdriver', true);
+    const pyxis = await loadFresh();
+
+    pyxis.init({ ...OPTIONS, debug: {} });
+
+    expect(listensForPageHide()).toBe(false);
+    expect(warn).toHaveBeenCalledWith(
+      '[pyxis] measuring is off in a browser driven by automation (navigator.webdriver is true)',
+    );
   });
 
   describe('trackingStatus', () => {
@@ -449,6 +472,16 @@ describe('the public API', () => {
         expect(pyxis.trackingStatus()).toBe('blocked-by-browser');
       },
     );
+
+    it('is still on in a browser driven by automation, since the switch is for people', async () => {
+      setNavigatorValue('webdriver', true);
+      const pyxis = await loadFresh();
+      pyxis.init(OPTIONS);
+
+      expect(pyxis.trackingStatus()).toBe('on');
+      pyxis.optOut();
+      expect(pyxis.trackingStatus()).toBe('opted-out');
+    });
 
     it('answers on instead of throwing when the signals cannot be read', async () => {
       Object.defineProperty(navigator, 'globalPrivacyControl', {

@@ -13,5 +13,6 @@ export function readPrivacySignals(nav: object, win: object, store: KeyValueStor
       textOrNull(Reflect.get(win, 'doNotTrack')),
     ]),
     optedOut: store.read(OPT_OUT_KEY) === OPT_OUT_VALUE,
+    automated: Reflect.get(nav, 'webdriver') === true,
   };
 }
