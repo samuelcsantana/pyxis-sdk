@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.0](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.2.1...v0.3.0) (2026-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **privacy:** a browser driven by automation is no longer measured. End-to-end tests that expect events must launch Chromium with --disable-blink-features=AutomationControlled, which makes navigator.webdriver false.
+
+### Features
+
+* **playground:** say when the browser is driven by automation ([cdd42ce](https://github.com/samuelcsantana/pyxis-sdk/commit/cdd42cee7279dc5b6c3bac531d1441b8e357f9fa))
+* **privacy:** stop measuring browsers driven by automation ([9e8f058](https://github.com/samuelcsantana/pyxis-sdk/commit/9e8f058722bdd3ae03cb93ec684c82185aa919a7))
+
+
+### Documentation
+
+* **adr:** record why browsers driven by automation are not measured ([df05495](https://github.com/samuelcsantana/pyxis-sdk/commit/df054952f18cd395107e80787efdf1b446c590f4))
+* **readme:** add pyxis-mcp to the ecosystem table ([470774f](https://github.com/samuelcsantana/pyxis-sdk/commit/470774f998cd2cfdf1438a2a4002d893aba7633c))
+* **readme:** link the introduction post ([ff6497c](https://github.com/samuelcsantana/pyxis-sdk/commit/ff6497c5ae8b7796dbd092ac36b9e0a8852cdb41))
+* **readme:** say that browsers driven by automation are not measured ([80c76a0](https://github.com/samuelcsantana/pyxis-sdk/commit/80c76a0b63699792e224d09e2acaadd09ec761f1))
+
 ## [0.2.1](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.2.0...v0.2.1) (2026-10-11)
 
 
