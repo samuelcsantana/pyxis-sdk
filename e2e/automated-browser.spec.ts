@@ -15,6 +15,7 @@ test('queues nothing in a browser that reports automation, while trackingStatus(
 
   await exercise(page);
 
+  await expect(page.getByRole('status')).toHaveText(/driven by automation/);
   await expect(page.locator('#tracking-status')).toHaveText("trackingStatus(): 'on'");
   await expect(page.locator('#batches > li')).toHaveCount(0);
 });

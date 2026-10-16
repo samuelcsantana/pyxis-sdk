@@ -55,6 +55,13 @@ function simulateGlobalPrivacyControl(): boolean {
   return on;
 }
 
+function noticeAutomation(): void {
+  if (navigator.webdriver) {
+    status.textContent =
+      'This browser is driven by automation (navigator.webdriver): the tracker queues and sends nothing.';
+  }
+}
+
 const ACTIONS: Readonly<Record<string, () => void>> = {
   track: () => {
     track('cta_clicked', { cta: 'start_trial', location: 'pricing' });
@@ -87,6 +94,7 @@ function showTrackingStatus(): void {
 }
 
 simulateGlobalPrivacyControl();
+noticeAutomation();
 showTrackingStatus();
 init({
   key: PLAYGROUND_KEY,
