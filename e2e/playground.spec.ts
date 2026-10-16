@@ -47,6 +47,14 @@ test.beforeEach(async ({ page }) => {
   await page.clock.install();
 });
 
+test('runs in a Chromium that does not report automation, as a visitor browser does', async ({
+  page,
+}) => {
+  await page.goto('/');
+
+  expect(await page.evaluate(() => navigator.webdriver)).toBe(false);
+});
+
 test('shows the batches it would send, valid against the API contract, and sends nothing', async ({
   page,
   baseURL,
