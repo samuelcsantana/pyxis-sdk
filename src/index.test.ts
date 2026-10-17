@@ -135,6 +135,51 @@ describe('the public API', () => {
     ]);
   });
 
+  describe('when the document has a referrer', () => {
+    beforeEach(() => {
+      Object.defineProperty(document, 'referrer', {
+        value: 'https://www.google.com/',
+        configurable: true,
+      });
+    });
+
+    afterEach(() => {
+      Reflect.deleteProperty(document, 'referrer');
+    });
+
+    it.each([
+      ['the referrer of the document when the options give none', undefined, 'google.com'],
+      [
+        'the referrer given in the options over the document',
+        'https://www.linkedin.com/',
+        'linkedin.com',
+      ],
+    ])('attributes the first page view to %s', async (_label, referrer, referrerHost) => {
+      const pyxis = await loadFresh();
+      pyxis.init(referrer === undefined ? OPTIONS : { ...OPTIONS, referrer });
+
+      window.dispatchEvent(new Event('pagehide'));
+
+      expect(sentEvents(fetchSpy)).toEqual([
+        expect.objectContaining({
+          name: 'page_view',
+          attribution: { referrer_host: referrerHost, from_ad_click: false },
+        }),
+      ]);
+    });
+
+    it('counts the visit as direct when the options give an empty referrer', async () => {
+      const pyxis = await loadFresh();
+      pyxis.init({ ...OPTIONS, referrer: '' });
+
+      window.dispatchEvent(new Event('pagehide'));
+
+      expect(sentEvents(fetchSpy)).toEqual([
+        expect.objectContaining({ name: 'page_view', attribution: { from_ad_click: false } }),
+      ]);
+    });
+  });
+
   it('records a page view per route change, templated', async () => {
     const pyxis = await loadFresh();
     pyxis.init({ ...OPTIONS, pathRules: ['/blog/:slug'] });

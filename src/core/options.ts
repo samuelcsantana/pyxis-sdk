@@ -10,6 +10,7 @@ export interface PyxisOptions {
   readonly endpoint: string;
   readonly pathRules?: readonly string[];
   readonly autoPageViews?: boolean;
+  readonly referrer?: string;
   readonly debug?: PyxisDebugOptions;
 }
 
@@ -18,6 +19,7 @@ export interface ResolvedOptions {
   readonly batchUrl: string;
   readonly pathRules: readonly string[];
   readonly autoPageViews: boolean;
+  readonly referrer?: string;
   readonly dryRun: boolean;
   readonly onBatch?: (batch: Batch) => void;
 }
@@ -55,6 +57,7 @@ export function resolveOptions(options: PyxisOptions): OptionsResolution {
     batchUrl,
     pathRules: options.pathRules ?? [],
     autoPageViews: options.autoPageViews ?? true,
+    ...(options.referrer === undefined ? {} : { referrer: options.referrer }),
     dryRun: options.debug?.dryRun ?? false,
   };
   const onBatch = options.debug?.onBatch;
