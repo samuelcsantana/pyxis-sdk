@@ -79,17 +79,28 @@ reset();
 | `trackingStatus()`        | `'on'`, `'opted-out'` or `'blocked-by-browser'`, for an opt-out switch                    |
 | `trackRequest(request)`   | The method, route template, status and duration of an HTTP call                           |
 
-| Option          | Default  | Meaning                                                                                          |
-| --------------- | -------- | ------------------------------------------------------------------------------------------------ |
-| `key`           | required | The project's public key; empty or missing disables the SDK without an error                     |
-| `endpoint`      | required | The API's base URL, `http` or `https`                                                            |
-| `pathRules`     | `[]`     | Templates tried before the default rules: `'/blog/:slug'` turns `/blog/hello` into `/blog/:slug` |
-| `autoPageViews` | `true`   | Record the landing page and every History API route change as a `page_view`                      |
-| `debug`         | unset    | `{ dryRun, onBatch }`: inspect batches, optionally without sending them                          |
+| Option          | Default             | Meaning                                                                                          |
+| --------------- | ------------------- | ------------------------------------------------------------------------------------------------ |
+| `key`           | required            | The project's public key; empty or missing disables the SDK without an error                     |
+| `endpoint`      | required            | The API's base URL, `http` or `https`                                                            |
+| `pathRules`     | `[]`                | Templates tried before the default rules: `'/blog/:slug'` turns `/blog/hello` into `/blog/:slug` |
+| `autoPageViews` | `true`              | Record the landing page and every History API route change as a `page_view`                      |
+| `referrer`      | `document.referrer` | The address the visitor came from, for the first page view; `''` means none                      |
+| `debug`         | unset               | `{ dryRun, onBatch }`: inspect batches, optionally without sending them                          |
 
 A route change that keeps the same templated path records nothing, so routers that call
 `replaceState` on their own do not inflate page views. Only the first page view of a visit carries
 its attribution (referrer host, campaign tags, ad click flag).
+
+A page that sends the visitor elsewhere as soon as it loads, such as a language redirect with
+`location.replace`, leaves the next page with its own address as `document.referrer`, so the site
+the visitor came from is lost and the visit counts as direct. Keep the first page's
+`document.referrer` before moving (in `sessionStorage`, for instance) and pass it as `referrer` to
+`init` on the page it opens:
+
+```ts
+init({ key: 'pyxis_pk_…', endpoint: 'https://api.pyxis.example.com', referrer: carriedReferrer });
+```
 
 Call `identify(userId)` on every load of the signed-in part of the site, not only right after
 sign-in: the id lives in `sessionStorage`, so a new tab starts without it, and calling it again
