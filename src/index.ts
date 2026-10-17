@@ -81,10 +81,14 @@ function stop(): void {
   tracker = undefined;
 }
 
-function startAutoPageViews(current: Tracker, pathRules: readonly string[]): () => void {
+function startAutoPageViews(
+  current: Tracker,
+  pathRules: readonly string[],
+  referrer: string | undefined,
+): () => void {
   return startPageViews(current, pathRules, {
     location: () => window.location,
-    referrer: document.referrer,
+    referrer: referrer ?? document.referrer,
     watch: (onNavigate) => watchNavigation(onNavigate, window),
     guard: bestEffort,
   });
@@ -109,7 +113,7 @@ function start(options: PyxisOptions): void {
     current.flush(true);
   });
   stoppers = resolution.options.autoPageViews
-    ? [stopFlushingOnHide, startAutoPageViews(current, pathRules)]
+    ? [stopFlushingOnHide, startAutoPageViews(current, pathRules, resolution.options.referrer)]
     : [stopFlushingOnHide];
 }
 

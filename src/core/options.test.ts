@@ -47,6 +47,13 @@ describe('resolveOptions', () => {
     });
   });
 
+  it('keeps an empty referrer, which stands for a visit that came from nowhere', () => {
+    expect(resolveOptions({ key: 'pyxis_pk_x', endpoint, referrer: '' })).toMatchObject({
+      ok: true,
+      options: { referrer: '' },
+    });
+  });
+
   it('keeps every option the site sets', () => {
     const onBatch = vi.fn();
 
@@ -56,6 +63,7 @@ describe('resolveOptions', () => {
         endpoint,
         pathRules: ['/orders/:id'],
         autoPageViews: false,
+        referrer: 'https://www.linkedin.com/',
         debug: { dryRun: true, onBatch },
       }),
     ).toEqual({
@@ -65,6 +73,7 @@ describe('resolveOptions', () => {
         batchUrl: 'https://api.pyxis.example.com/v1/batch',
         pathRules: ['/orders/:id'],
         autoPageViews: false,
+        referrer: 'https://www.linkedin.com/',
         dryRun: true,
         onBatch,
       },
