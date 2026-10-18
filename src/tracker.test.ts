@@ -6,7 +6,12 @@ import { FLUSH_DELAY_MS, FLUSH_EVENT_COUNT } from './core/batch-policy.js';
 import type { ResolvedOptions } from './core/options.js';
 import { RETRY_DELAYS_MS, type SendOutcome } from './core/retry-policy.js';
 import { SESSION_IDLE_TIMEOUT_MS } from './core/session-policy.js';
-import { createTracker, SESSION_KEY, type TrackerDependencies } from './tracker.js';
+import {
+  createTracker,
+  REFUSED_WARNING,
+  SESSION_KEY,
+  type TrackerDependencies,
+} from './tracker.js';
 
 const START = Date.UTC(2026, 9, 6, 14, 3, 10, 4);
 
@@ -39,6 +44,7 @@ function setup(
   options: Partial<ResolvedOptions> = {},
   outcomes: SendOutcome[] = [],
   sessionStore: KeyValueStore = memoryStore(),
+  warn?: (message: string) => void,
 ) {
   let nextId = 0;
   const { transport, sent } = fakeTransport(outcomes);
@@ -48,6 +54,7 @@ function setup(
     random: () => 0.5,
     sessionStore,
     transport,
+    ...(warn === undefined ? {} : { warn }),
   };
   return { tracker: createTracker({ ...OPTIONS, ...options }, deps), sent, sessionStore };
 }
@@ -300,6 +307,63 @@ describe('createTracker', () => {
     await vi.advanceTimersByTimeAsync(60_000);
 
     expect(sent).toHaveLength(1);
+  });
+
+  it.each([401, 403])(
+    'sends nothing more from the page once the API answers %i',
+    async (status) => {
+      const { tracker, sent } = setup({}, [{ kind: 'response', status }]);
+
+      tracker.enqueue({ name: 'page_view', path: '/' });
+      tracker.flush();
+      await settle();
+      tracker.enqueue({ name: 'page_view', path: '/next' });
+      tracker.flush();
+      tracker.identify('user_1', '/next');
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(sent).toHaveLength(1);
+    },
+  );
+
+  it('drops the queue and a pending retry of another batch when the API refuses', async () => {
+    const { tracker, sent } = setup({}, [
+      { kind: 'network-error' },
+      { kind: 'response', status: 401 },
+    ]);
+
+    tracker.enqueue({ name: 'page_view', path: '/' });
+    tracker.flush();
+    await settle();
+    tracker.enqueue({ name: 'page_view', path: '/next' });
+    tracker.flush();
+    tracker.enqueue({ name: 'page_view', path: '/queued' });
+    await settle();
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(sent.map((entry) => entry.batch.events[0]?.path)).toEqual(['/', '/next']);
+  });
+
+  it('warns once when the API refuses batches already in flight', async () => {
+    const warn = vi.fn();
+    const { tracker, sent } = setup(
+      {},
+      [
+        { kind: 'response', status: 403 },
+        { kind: 'response', status: 403 },
+      ],
+      memoryStore(),
+      warn,
+    );
+
+    tracker.enqueue({ name: 'page_view', path: '/' });
+    tracker.flush();
+    tracker.enqueue({ name: 'page_view', path: '/next' });
+    tracker.flush();
+    await settle();
+
+    expect(sent).toHaveLength(2);
+    expect(warn.mock.calls).toEqual([[REFUSED_WARNING]]);
   });
 
   it('treats a transport that rejects as a network error and retries', async () => {

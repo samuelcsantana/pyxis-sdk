@@ -28,6 +28,7 @@ export interface TrackerDependencies {
   readonly random: () => number;
   readonly sessionStore: KeyValueStore;
   readonly transport: Transport;
+  readonly warn?: (message: string) => void;
 }
 
 export interface EventInput {
@@ -46,6 +47,7 @@ export interface Tracker {
 }
 
 const NETWORK_ERROR: SendOutcome = { kind: 'network-error' };
+export const REFUSED_WARNING = 'the API refused the batch; nothing more is sent from this page';
 
 export function createTracker(options: ResolvedOptions, deps: TrackerDependencies): Tracker {
   let queue: readonly BatchEvent[] = [];
@@ -72,14 +74,23 @@ export function createTracker(options: ResolvedOptions, deps: TrackerDependencie
     }
   };
 
+  const dispose = (): void => {
+    disposed = true;
+    queue = [];
+    if (flushTimer !== undefined) {
+      clearTimeout(flushTimer);
+    }
+    retryTimers.forEach((timer) => {
+      clearTimeout(timer);
+    });
+    retryTimers.clear();
+  };
+
   const scheduleRetry = (
     events: readonly BatchEvent[],
     attempt: number,
     outcome: SendOutcome,
   ): void => {
-    if (disposed || judgeOutcome(outcome) !== 'retry') {
-      return;
-    }
     const retryAfter = outcome.kind === 'response' ? outcome.retryAfterSeconds : undefined;
     const delay = retryDelay(attempt, deps.random, retryAfter);
     if (delay === undefined) {
@@ -92,6 +103,25 @@ export function createTracker(options: ResolvedOptions, deps: TrackerDependencie
     retryTimers.add(timer);
   };
 
+  const handleOutcome = (
+    events: readonly BatchEvent[],
+    attempt: number,
+    outcome: SendOutcome,
+  ): void => {
+    if (disposed) {
+      return;
+    }
+    const verdict = judgeOutcome(outcome);
+    if (verdict === 'stop') {
+      deps.warn?.(REFUSED_WARNING);
+      dispose();
+      return;
+    }
+    if (verdict === 'retry') {
+      scheduleRetry(events, attempt, outcome);
+    }
+  };
+
   const send = (events: readonly BatchEvent[], attempt: number, pageHidden: boolean): void => {
     const batch = buildBatch(options.key, deps.now(), events);
     tryNotifyBatch(batch);
@@ -100,10 +130,10 @@ export function createTracker(options: ResolvedOptions, deps: TrackerDependencie
     }
     void deps.transport.send(options.batchUrl, serializeBatch(batch), pageHidden).then(
       (outcome) => {
-        scheduleRetry(events, attempt, outcome);
+        handleOutcome(events, attempt, outcome);
       },
       () => {
-        scheduleRetry(events, attempt, NETWORK_ERROR);
+        handleOutcome(events, attempt, NETWORK_ERROR);
       },
     );
   };
@@ -180,16 +210,6 @@ export function createTracker(options: ResolvedOptions, deps: TrackerDependencie
     identify,
     reset,
     flush,
-    dispose: () => {
-      disposed = true;
-      queue = [];
-      if (flushTimer !== undefined) {
-        clearTimeout(flushTimer);
-      }
-      retryTimers.forEach((timer) => {
-        clearTimeout(timer);
-      });
-      retryTimers.clear();
-    },
+    dispose,
   };
 }
