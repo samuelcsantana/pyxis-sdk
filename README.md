@@ -108,6 +108,12 @@ for the same user sends nothing. Pass the site's internal id (`[A-Za-z0-9_-]{1,6
 email. `track` ignores reserved or malformed names and drops invalid properties one by one; set
 `debug: {}` to see why in the console.
 
+A batch that meets a network error, `429` or a `5xx` is sent again up to five times (after about
+1, 2, 4, 8 and 16 seconds, longer if `Retry-After` asks). A `400` or `413` drops that batch only.
+A `401` (unknown or revoked key) or `403` (origin not allowed, quota used up, account or project
+suspended) stops the tracker for the rest of the page: nothing more is sent until the next page
+load, and `debug` says so once ([ADR 0006](docs/adr/0006-stop-after-a-refused-batch.md)).
+
 `trackRequest` records calls the site makes to its own API. Wrap the HTTP client once; leave
 aborted requests out, since a user who navigated away is not an error:
 
@@ -245,6 +251,7 @@ against the upstream document, so a breaking change in the API shows up here the
 | [0003](docs/adr/0003-zero-dependencies.md)             | Zero runtime dependencies and a 3 KB size budget |
 | [0004](docs/adr/0004-five-kilobyte-budget.md)          | Raise the size budget to 5 KB                    |
 | [0005](docs/adr/0005-skip-automated-browsers.md)       | Do not measure browsers driven by automation     |
+| [0006](docs/adr/0006-stop-after-a-refused-batch.md)    | Send nothing more after a refused batch          |
 
 ## Roadmap
 
