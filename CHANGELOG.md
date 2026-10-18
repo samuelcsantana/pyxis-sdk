@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.4.0...v0.5.0) (2026-10-18)
+
+
+### Features
+
+* **tracker:** send nothing more from a page after a refused batch ([7e1f070](https://github.com/samuelcsantana/pyxis-sdk/commit/7e1f07020443f1f832203e3a499eaa90fea88b88))
+
+
+### Documentation
+
+* **adr:** record why a refused batch stops the page ([995e99b](https://github.com/samuelcsantana/pyxis-sdk/commit/995e99b9975b36300a81c32c143f9c16be45d800))
+
 ## [0.4.0](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.3.0...v0.4.0) (2026-10-18)
 
 
