@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.3.0...v0.4.0) (2026-10-18)
+
+
+### Features
+
+* **options:** accept the referrer of the visit's first page ([3145c11](https://github.com/samuelcsantana/pyxis-sdk/commit/3145c11a87ed614801100f0f89242eeb2b17cf4f))
+
+
+### Documentation
+
+* **readme:** document the referrer option ([2d09d41](https://github.com/samuelcsantana/pyxis-sdk/commit/2d09d41b98b70d4244b8a8e30b900a64a5c5f3b8))
+
 ## [0.3.0](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.2.1...v0.3.0) (2026-10-16)
 
 
