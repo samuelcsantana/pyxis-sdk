@@ -357,6 +357,25 @@ describe('the public API', () => {
     ]);
   });
 
+  it('sends nothing more from the page after the API refuses a batch, saying so in debug mode', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    fetchSpy.mockImplementationOnce(() => Promise.resolve(new Response(null, { status: 401 })));
+    const pyxis = await loadFresh();
+    pyxis.init({ ...OPTIONS, autoPageViews: false, debug: {} });
+
+    pyxis.track('plan_selected');
+    window.dispatchEvent(new Event('pagehide'));
+    await vi.waitFor(() => {
+      expect(warn).toHaveBeenCalledWith(
+        '[pyxis] the API refused the batch; nothing more is sent from this page',
+      );
+    });
+    pyxis.track('plan_viewed');
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps track, identify and reset silent before init and without a key', async () => {
     const pyxis = await loadFresh();
 

@@ -10,8 +10,12 @@ describe('judgeOutcome', () => {
     expect(judgeOutcome({ kind: 'response', status })).toBe('retry');
   });
 
-  it.each([400, 401, 403, 404, 413, 302])('drops on %i, which a retry cannot fix', (status) => {
+  it.each([400, 404, 413, 302])('drops on %i, which a retry cannot fix', (status) => {
     expect(judgeOutcome({ kind: 'response', status })).toBe('drop');
+  });
+
+  it.each([401, 403])('stops on %i, which refuses every later batch of the page', (status) => {
+    expect(judgeOutcome({ kind: 'response', status })).toBe('stop');
   });
 
   it('retries when no response arrived', () => {

@@ -106,7 +106,10 @@ function start(options: PyxisOptions): void {
   if (!isTrackingAllowed(signals)) {
     return;
   }
-  const current = createTracker(resolution.options, createBrowserDependencies());
+  const current = createTracker(resolution.options, {
+    ...createBrowserDependencies(),
+    warn: debugWarn,
+  });
   pathRules = resolution.options.pathRules;
   tracker = current;
   const stopFlushingOnHide = onPageHide(() => {

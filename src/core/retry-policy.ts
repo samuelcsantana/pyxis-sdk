@@ -6,8 +6,10 @@ export type SendOutcome =
   | { readonly kind: 'network-error' }
   | { readonly kind: 'handed-off' };
 
-export type SendVerdict = 'done' | 'retry' | 'drop';
+export type SendVerdict = 'done' | 'retry' | 'drop' | 'stop';
 
+const UNAUTHORIZED = 401;
+const FORBIDDEN = 403;
 const TOO_MANY_REQUESTS = 429;
 
 export function judgeOutcome(outcome: SendOutcome): SendVerdict {
@@ -23,6 +25,9 @@ export function judgeOutcome(outcome: SendOutcome): SendVerdict {
   }
   if (status === TOO_MANY_REQUESTS || status >= 500) {
     return 'retry';
+  }
+  if (status === UNAUTHORIZED || status === FORBIDDEN) {
+    return 'stop';
   }
   return 'drop';
 }
