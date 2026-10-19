@@ -26,8 +26,8 @@ showing every batch it would send, with no request leaving the page.
 </div>
 
 > **Status:** `pyxis-analytics` is on npm, every release published from GitHub Actions with
-> provenance, and measures a site in production. Every function below is validated against the
-> API's contract on each push (see [Roadmap](#roadmap)).
+> provenance, and measures sites in production, the Pyxis home page among them. Every function
+> below is validated against the API's contract on each push (see [Roadmap](#roadmap)).
 
 ## Ecosystem
 
@@ -264,6 +264,8 @@ against the upstream document, so a breaking change in the API shows up here the
 - [x] Playground on GitHub Pages
 - [x] `trackingStatus()` for opt-out switches
 - [x] Browsers driven by automation are not measured
+- [x] `referrer` option, for a first page reached through a redirect
+- [x] A page sends nothing more after the API refuses its batch
 
 ## Contributing and license
 
