@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.5.0...v0.5.1) (2026-10-27)
+
+
+### Documentation
+
+* **readme:** bring the status and the roadmap up to date ([88b814b](https://github.com/samuelcsantana/pyxis-sdk/commit/88b814badbc4488f3b7c0e039a0e80d81b8fa74d))
+
 ## [0.5.0](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.4.0...v0.5.0) (2026-10-18)
 
 
