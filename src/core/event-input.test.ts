@@ -76,6 +76,18 @@ describe('sanitizeProperties', () => {
     });
   });
 
+  it('drops an own __proto__ key as invalid instead of losing it without a warning', () => {
+    const input: unknown = Object.fromEntries([
+      ['__proto__', 1],
+      ['plan', 'pro'],
+    ]);
+
+    expect(sanitizeProperties(input)).toEqual({
+      properties: { plan: 'pro' },
+      dropped: [{ key: '__proto__', reason: 'invalid_key' }],
+    });
+  });
+
   it(`keeps the first ${String(MAX_PROPERTIES)} valid properties and drops the others`, () => {
     const input = Object.fromEntries(
       Array.from({ length: MAX_PROPERTIES + 2 }, (_, index) => [`key_${String(index)}`, index]),
