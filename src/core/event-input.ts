@@ -8,6 +8,7 @@ export const MAX_PROPERTY_STRING_LENGTH = 100;
 const EVENT_NAME_PATTERN = /^[a-z][a-z0-9_]{0,63}$/;
 const PROPERTY_KEY_PATTERN = /^[a-z0-9_]{1,40}$/;
 const USER_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+const PROTOTYPE_KEY = '__proto__';
 
 export type NameCheck = 'ok' | 'invalid' | 'reserved';
 
@@ -34,6 +35,10 @@ export function isValidUserId(userId: unknown): userId is string {
   return typeof userId === 'string' && USER_ID_PATTERN.test(userId);
 }
 
+function isPropertyKey(key: string): boolean {
+  return PROPERTY_KEY_PATTERN.test(key) && key !== PROTOTYPE_KEY;
+}
+
 function isPropertyValue(value: unknown): value is PropertyValue {
   return (
     typeof value === 'boolean' ||
@@ -47,7 +52,7 @@ export function sanitizeProperties(input: unknown): SanitizedProperties {
   const dropped: DroppedProperty[] = [];
   const entries = typeof input === 'object' && input !== null ? Object.entries(input) : [];
   for (const [key, value] of entries) {
-    if (!PROPERTY_KEY_PATTERN.test(key)) {
+    if (!isPropertyKey(key)) {
       dropped.push({ key, reason: 'invalid_key' });
     } else if (!isPropertyValue(value)) {
       dropped.push({ key, reason: 'invalid_value' });
