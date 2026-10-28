@@ -1,5 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
+import { templatePath } from './path-template.js';
 import {
   checkTrackedRequest,
   MAX_HTTP_STATUS,
@@ -24,11 +25,18 @@ const MAX_GENERATED_WORDS = 20;
 const emailAddress = fc.emailAddress();
 
 const longPath = fc
-  .array(fc.stringMatching(/^[a-z]{5,20}$/), {
-    minLength: 1,
-    maxLength: MAX_GENERATED_WORDS,
-    size: 'max',
-  })
+  .array(
+    fc.oneof(
+      fc.stringMatching(/^[a-z]{5,20}$/),
+      fc.stringMatching(/^\d{1,3}[a-z]{1,10}$/),
+      fc.stringMatching(/^\d{1,12}$/),
+    ),
+    {
+      minLength: 1,
+      maxLength: MAX_GENERATED_WORDS,
+      size: 'max',
+    },
+  )
   .map((words) => `/${words.join('/')}`);
 
 const urlPath = fc.oneof(fc.webPath(), longPath);
@@ -90,6 +98,17 @@ describe('routeOf properties', () => {
 
         expect(route).not.toMatch(/[?#@]|%40/i);
         expect(route.length).toBeLessThanOrEqual(MAX_ROUTE_LENGTH);
+      }),
+    );
+  });
+
+  it('returns a route that templating again leaves unchanged, as the API does, whatever the length', () => {
+    fc.assert(
+      fc.property(fc.oneof(urlCarryingEmails, relativeUrl), (url) => {
+        const route = routeOf(url, []);
+        fc.pre(route !== undefined);
+
+        expect(templatePath(route, [])).toBe(route);
       }),
     );
   });
