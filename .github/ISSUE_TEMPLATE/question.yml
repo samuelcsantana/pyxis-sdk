@@ -1,0 +1,31 @@
+name: Question
+description: Ask how to install or use Pyxis.
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Questions are public: never paste a key, a token or anyone's personal data. For your
+        account, your plan or billing, write to hello@pyxis-analytics.dev from your account's
+        e-mail instead.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: What you are trying to do and where you are stuck.
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Your setup
+      description: >-
+        The framework of your site, how you added Pyxis (the npm package or the snippet from the
+        dashboard) and its version.
+  - type: textarea
+    id: tried
+    attributes:
+      label: What you tried
+      description: >-
+        The code or the steps, and what happened. A visit id helps; a visitor's personal data
+        never belongs here.
