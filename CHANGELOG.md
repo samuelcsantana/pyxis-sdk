@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.2](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.5.1...v0.5.2) (2026-10-28)
+
+
+### Documentation
+
+* **readme:** add install steps, the hosted endpoint and the npm badges ([118146d](https://github.com/samuelcsantana/pyxis-sdk/commit/118146dd773cc695ed260bdb5478db3b61ecea29))
+* **readme:** add the OpenSSF Scorecard badge ([e6ff1c4](https://github.com/samuelcsantana/pyxis-sdk/commit/e6ff1c40a1a9e040b16669c17420bbc3f960a418))
+
 ## [0.5.1](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.5.0...v0.5.1) (2026-10-27)
 
 
