@@ -227,9 +227,9 @@ that tests replace with fakes ([ADR 0002](docs/adr/0002-functional-core.md)).
 
 ## Tech stack
 
-TypeScript 6 (strict) · esbuild (one minified ES module) · Vitest 5 with jsdom · GitHub Actions
-with CodeQL, OpenSSF Scorecard, Dependabot, Codecov and release-please · npm trusted publishing
-with provenance.
+TypeScript 6 (strict) · esbuild (one minified ES module) · Vitest 5 with jsdom and fast-check ·
+GitHub Actions with CodeQL, OpenSSF Scorecard, Dependabot, Codecov and release-please · npm trusted
+publishing with provenance.
 
 ## Getting started
 
@@ -246,12 +246,24 @@ npm run build && npm run size
 npm run test:cov       # unit tests in jsdom, 100% coverage required
 npm run test:tooling   # the lint rule and the scripts
 npx vitest run src/contract.test.ts   # the contract test alone
+npx vitest run property   # the property-based tests alone
 npm run test:e2e       # the playground in Chromium: batches valid, nothing sent, none if automated
 ```
 
 Coverage must stay at **100% of statements, branches, functions and lines** of `src/`; CI fails
 below it. Nothing in `src/` is excluded. The tooling under `eslint-rules/` and `scripts/` sits
 outside `src/` and is tested on Node's test runner instead.
+
+Beyond hand-picked examples, the rules of `src/core/` are checked as properties with
+[fast-check](https://fast-check.dev): each `*.property.test.ts` states a rule, and fast-check tries
+it on 500 generated inputs, Unicode and malformed ones included, shrinking any failure to a minimal
+counterexample. They cover path templating (identifier-shaped segments become `:id`, rules, the
+256-character limit), property sanitizing (the limits, every key kept or reported as dropped),
+batching (every event sent once, in order, within both limits), the retry delays and
+`Retry-After`, attribution (UTM limits, only the referrer's host) and request tracking (no query,
+fragment or e-mail address in the route). `vitest.setup.ts` fixes the seed (`20261028`) and the
+run count for every file, so CI, the pre-commit hook and a local run test the same inputs; a
+failure prints the seed and path that replay it.
 
 ## Project structure
 
