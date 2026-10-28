@@ -16,11 +16,15 @@ without cookies, without personal data and without a single runtime dependency.*
 [![License: MIT](https://img.shields.io/github/license/samuelcsantana/pyxis-sdk)](LICENSE)
 [![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org)
+[![npm](https://img.shields.io/npm/v/pyxis-analytics?logo=npm)](https://www.npmjs.com/package/pyxis-analytics)
+[![Size](https://img.shields.io/bundlejs/size/pyxis-analytics)](docs/adr/0004-five-kilobyte-budget.md)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](package.json)
+[![npm provenance](https://img.shields.io/badge/npm-provenance-2E7D32?logo=npm)](https://www.npmjs.com/package/pyxis-analytics#provenance)
 
 **[Playground](https://samuelcsantana.github.io/pyxis-sdk/)** — the real tracker in dry-run mode,
 showing every batch it would send, with no request leaving the page.
 
+**[Pyxis](https://pyxis-analytics.dev)** · **[Live demo](https://demo.pyxis-analytics.dev)** ·
 **[Dashboard Storybook](https://samuelcsantana.github.io/pyxis-web/)** ·
 **[API reference](https://samuelcsantana.github.io/pyxis-api/)**
 
@@ -32,12 +36,12 @@ showing every batch it would send, with no request leaving the page.
 
 ## Ecosystem
 
-| Repository                                               | Role                                                             |
-| -------------------------------------------------------- | ---------------------------------------------------------------- |
-| [pyxis-api](https://github.com/samuelcsantana/pyxis-api) | Ingestion, dashboard sign-in and queries, erasure, retention     |
-| **pyxis-sdk** (this one)                                 | Browser tracker published to npm as `pyxis-analytics`            |
-| [pyxis-web](https://github.com/samuelcsantana/pyxis-web) | The dashboard: overview, funnels, features, requests             |
-| [pyxis-mcp](https://github.com/samuelcsantana/pyxis-mcp) | MCP server: Claude and other agents read the dashboard's numbers |
+| Repository                                               | Role                                                                                   |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [pyxis-api](https://github.com/samuelcsantana/pyxis-api) | Ingestion, sign-in, dashboard queries, accounts and billing, erasure, the MCP endpoint |
+| **pyxis-sdk** (this one)                                 | Browser tracker published to npm as `pyxis-analytics`                                  |
+| [pyxis-web](https://github.com/samuelcsantana/pyxis-web) | The dashboard and the home page                                                        |
+| [pyxis-mcp](https://github.com/samuelcsantana/pyxis-mcp) | MCP server: Claude and other agents read the dashboard's numbers                       |
 
 ## Why it exists
 
@@ -54,6 +58,36 @@ author's blog, also in [Portuguese][post-pt] and [Spanish][post-es].
 [post-pt]: https://www.samuelsantana.dev/blog/pyxis-analytics-sem-cookie-sem-ip-sem-dado-pessoal
 [post-es]: https://www.samuelsantana.dev/es/blog/pyxis-analytics-sin-cookies-sin-ip-sin-datos-personales
 
+## Install
+
+```bash
+npm install pyxis-analytics
+```
+
+Sign up at [app.pyxis-analytics.dev](https://app.pyxis-analytics.dev/sign-up) (the free plan needs
+no card), create a project and call `init` once when the site loads, with the project's public key.
+The project's Install page shows these snippets with its key already in them.
+
+```ts
+import { init } from 'pyxis-analytics';
+
+init({ key: 'pyxis_pk_…', endpoint: 'https://api.pyxis-analytics.dev' });
+```
+
+Without a bundler, load the same module from jsDelivr. `@0.5` follows the patches of that minor
+version; the Install page pins the exact one:
+
+```html
+<script type="module">
+  import { init } from 'https://cdn.jsdelivr.net/npm/pyxis-analytics@0.5/dist/index.js';
+  init({ key: 'pyxis_pk_…', endpoint: 'https://api.pyxis-analytics.dev' });
+</script>
+```
+
+A self-hosted Pyxis passes its own API as `endpoint`. A coding agent asked to install Pyxis can
+follow [llms.txt](https://pyxis-analytics.dev/llms.txt), which also lists the rules an
+integration must keep.
+
 ## API
 
 ```ts
@@ -61,7 +95,7 @@ import { init, track, identify, reset } from 'pyxis-analytics';
 
 init({
   key: 'pyxis_pk_…',
-  endpoint: 'https://api.pyxis.example.com',
+  endpoint: 'https://api.pyxis-analytics.dev',
   pathRules: ['/orders/:id'],
 });
 
@@ -83,7 +117,7 @@ reset();
 | Option          | Default             | Meaning                                                                                          |
 | --------------- | ------------------- | ------------------------------------------------------------------------------------------------ |
 | `key`           | required            | The project's public key; empty or missing disables the SDK without an error                     |
-| `endpoint`      | required            | The API's base URL, `http` or `https`                                                            |
+| `endpoint`      | required            | The API's base URL, `http` or `https`: `https://api.pyxis-analytics.dev`, or a self-hosted one   |
 | `pathRules`     | `[]`                | Templates tried before the default rules: `'/blog/:slug'` turns `/blog/hello` into `/blog/:slug` |
 | `autoPageViews` | `true`              | Record the landing page and every History API route change as a `page_view`                      |
 | `referrer`      | `document.referrer` | The address the visitor came from, for the first page view; `''` means none                      |
@@ -100,7 +134,7 @@ the visitor came from is lost and the visit counts as direct. Keep the first pag
 `init` on the page it opens:
 
 ```ts
-init({ key: 'pyxis_pk_…', endpoint: 'https://api.pyxis.example.com', referrer: carriedReferrer });
+init({ key: 'pyxis_pk_…', endpoint: 'https://api.pyxis-analytics.dev', referrer: carriedReferrer });
 ```
 
 Call `identify(userId)` on every load of the signed-in part of the site, not only right after
