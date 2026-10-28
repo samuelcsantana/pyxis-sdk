@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.3](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.5.2...v0.5.3) (2026-10-28)
+
+
+### Bug Fixes
+
+* **core:** ignore a Retry-After too large to be read exactly ([998f627](https://github.com/samuelcsantana/pyxis-sdk/commit/998f62729537c262ecc201e03ebdb4f164dd2c0d))
+* **core:** report a __proto__ property as dropped instead of losing it ([5dc7146](https://github.com/samuelcsantana/pyxis-sdk/commit/5dc714603d332bbc61a5556cee3b111556448729))
+
+
+### Documentation
+
+* **readme:** describe the property-based tests and their fixed seed ([fe5a705](https://github.com/samuelcsantana/pyxis-sdk/commit/fe5a705e9411f8d45806b6ff16ff1a33ed07d353))
+
 ## [0.5.2](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.5.1...v0.5.2) (2026-10-28)
 
 
