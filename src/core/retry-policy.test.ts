@@ -57,4 +57,15 @@ describe('parseRetryAfter', () => {
   it.each([null, '', 'Wed, 21 Oct 2026 07:28:00 GMT', '-5', '1.5'])('ignores %j', (header) => {
     expect(parseRetryAfter(header)).toBeUndefined();
   });
+
+  it('reads the largest safe integer', () => {
+    expect(parseRetryAfter(String(Number.MAX_SAFE_INTEGER))).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
+  it.each([
+    ['one past the largest safe integer', String(Number.MAX_SAFE_INTEGER + 1)],
+    ['a number of 400 digits', '9'.repeat(400)],
+  ])('ignores %s, too large to be read exactly', (_description, header) => {
+    expect(parseRetryAfter(header)).toBeUndefined();
+  });
 });

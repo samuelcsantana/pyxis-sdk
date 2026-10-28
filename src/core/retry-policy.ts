@@ -49,5 +49,6 @@ export function parseRetryAfter(header: string | null): number | undefined {
   if (header === null || !/^\d+$/.test(header.trim())) {
     return undefined;
   }
-  return Number(header.trim());
+  const seconds = Number(header.trim());
+  return Number.isSafeInteger(seconds) ? seconds : undefined;
 }
