@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_PATH_LENGTH, templatePath } from './path-template.js';
+import { ID_PLACEHOLDER, MAX_PATH_LENGTH, templatePath } from './path-template.js';
 
 const PATH_TEMPLATE_CASES: readonly (readonly [string, string])[] = [
   ['/', '/'],
@@ -38,11 +38,26 @@ describe('templatePath with the default rules', () => {
   it('handles a path made of thousands of slashes in linear time', () => {
     const slashes = '/'.repeat(50_000);
 
-    expect(templatePath(`${slashes}x${slashes}`, [])).toBe(`${slashes}x`.slice(0, MAX_PATH_LENGTH));
+    expect(templatePath(`${slashes}x${slashes}`, [])).toBe('/');
   });
 
-  it(`cuts a path at ${String(MAX_PATH_LENGTH)} characters`, () => {
-    expect(templatePath(`/${'a'.repeat(300)}`, [])).toHaveLength(MAX_PATH_LENGTH);
+  it.each([
+    ['a word cut down to its leading digit', `/${'a'.repeat(253)}/0abc`, `/${'a'.repeat(253)}`],
+    ['an identifier cut down to a slash', `/${'a'.repeat(254)}/42`, `/${'a'.repeat(254)}`],
+    ['a cut landing exactly on a slash', `/${'a'.repeat(255)}/b`, `/${'a'.repeat(255)}`],
+    ['a long word after a templated prefix', `/orders/42/${'a'.repeat(250)}/x`, '/orders/:id'],
+  ])(
+    `cuts a path longer than ${String(MAX_PATH_LENGTH)} characters after its last whole segment: %s`,
+    (_, path, expected) => {
+      const cut = templatePath(path, []);
+
+      expect(cut).toBe(expected);
+      expect(templatePath(cut, [])).toBe(cut);
+    },
+  );
+
+  it(`sends /${ID_PLACEHOLDER} when not even the first segment fits in ${String(MAX_PATH_LENGTH)} characters`, () => {
+    expect(templatePath(`/${'a'.repeat(300)}`, [])).toBe(`/${ID_PLACEHOLDER}`);
   });
 });
 
