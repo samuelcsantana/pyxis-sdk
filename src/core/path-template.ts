@@ -35,6 +35,16 @@ function matchesRule(segments: readonly string[], rule: string): boolean {
   );
 }
 
+export function cutToWholeSegments(path: string, maxLength: number): string {
+  if (path.length <= maxLength) {
+    return path;
+  }
+  const lastFittingSlash = path.lastIndexOf('/', maxLength);
+  return lastFittingSlash > 0
+    ? withoutTrailingSlashes(path.slice(0, lastFittingSlash))
+    : `/${ID_PLACEHOLDER}`;
+}
+
 export function templatePath(path: string, rules: readonly string[]): string {
   const segments = withoutTrailingSlashes(path).split('/');
   const rule = rules.find((candidate) => matchesRule(segments, candidate));
@@ -42,5 +52,5 @@ export function templatePath(path: string, rules: readonly string[]): string {
     rule === undefined
       ? segments.map((segment) => (isIdentifier(segment) ? ID_PLACEHOLDER : segment)).join('/')
       : withoutTrailingSlashes(rule);
-  return templated.slice(0, MAX_PATH_LENGTH);
+  return cutToWholeSegments(templated, MAX_PATH_LENGTH);
 }
