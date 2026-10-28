@@ -11,6 +11,7 @@ without cookies, without personal data and without a single runtime dependency.*
 [![CI](https://github.com/samuelcsantana/pyxis-sdk/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/samuelcsantana/pyxis-sdk/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/samuelcsantana/pyxis-sdk/graph/badge.svg)](https://codecov.io/gh/samuelcsantana/pyxis-sdk)
 [![CodeQL](https://github.com/samuelcsantana/pyxis-sdk/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/samuelcsantana/pyxis-sdk/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/samuelcsantana/pyxis-sdk/badge)](https://scorecard.dev/viewer/?uri=github.com/samuelcsantana/pyxis-sdk)
 <br>
 [![License: MIT](https://img.shields.io/github/license/samuelcsantana/pyxis-sdk)](LICENSE)
 [![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
@@ -193,7 +194,8 @@ that tests replace with fakes ([ADR 0002](docs/adr/0002-functional-core.md)).
 ## Tech stack
 
 TypeScript 6 (strict) · esbuild (one minified ES module) · Vitest 5 with jsdom · GitHub Actions
-with CodeQL, Dependabot, Codecov and release-please · npm trusted publishing with provenance.
+with CodeQL, OpenSSF Scorecard, Dependabot, Codecov and release-please · npm trusted publishing
+with provenance.
 
 ## Getting started
 
