@@ -179,7 +179,9 @@ status `0` means no response arrived. An optional `errorCode` carries your API's
 
 - No cookies. The visit id lives in `sessionStorage` and ends with the tab.
 - Paths are reduced to templates (`/orders/9f1c…` becomes `/orders/:id`); emails and long digit
-  runs in a path never leave the browser.
+  runs in a path never leave the browser. A template longer than 256 characters (100 for a
+  request route) is cut after its last whole segment that fits, never inside one, and becomes
+  `/:id` when not even its first segment fits.
 - Query strings are dropped, except `utm_source`, `utm_medium` and `utm_campaign`; ad click ids
   become a single `from_ad_click: true`. Meta's `fbclid` is not counted as one: Meta adds it to
   every link that leaves Facebook or Instagram, ads or not.
@@ -258,10 +260,11 @@ Beyond hand-picked examples, the rules of `src/core/` are checked as properties 
 [fast-check](https://fast-check.dev): each `*.property.test.ts` states a rule, and fast-check tries
 it on 500 generated inputs, Unicode and malformed ones included, shrinking any failure to a minimal
 counterexample. They cover path templating (identifier-shaped segments become `:id`, rules, the
-256-character limit), property sanitizing (the limits, every key kept or reported as dropped),
-batching (every event sent once, in order, within both limits), the retry delays and
-`Retry-After`, attribution (UTM limits, only the referrer's host) and request tracking (no query,
-fragment or e-mail address in the route). `vitest.setup.ts` fixes the seed (`20261028`) and the
+cut between whole segments at 256 characters, a result the API's templating leaves unchanged),
+property sanitizing (the limits, every key kept or reported as dropped), batching (every event
+sent once, in order, within both limits), the retry delays and `Retry-After`, attribution (UTM
+limits, only the referrer's host) and request tracking (no query, fragment or e-mail address in
+the route, the same cut at 100 characters). `vitest.setup.ts` fixes the seed (`20261028`) and the
 run count for every file, so CI, the pre-commit hook and a local run test the same inputs; a
 failure prints the seed and path that replay it.
 
