@@ -12,6 +12,10 @@ const MAX_LONG_PATH_SEGMENTS = 120;
 
 const word = fc.stringMatching(/^[a-z][a-z-]{0,15}$/);
 
+const wordWithLeadingDigits = fc.stringMatching(/^\d{1,3}[a-z]{1,10}$/);
+
+const longWord = fc.stringMatching(/^[a-z]{200,320}$/);
+
 const emailAddress = fc.emailAddress().filter((address) => !address.includes('/'));
 
 const identifier = fc.oneof(
@@ -28,6 +32,15 @@ const segment = fc.oneof(
   identifier.map((text): Segment => ({ text, identifier: true })),
 );
 
+const longPathSegment = fc.oneof(
+  { weight: 4, arbitrary: segment },
+  {
+    weight: 2,
+    arbitrary: wordWithLeadingDigits.map((text): Segment => ({ text, identifier: false })),
+  },
+  { weight: 1, arbitrary: longWord.map((text): Segment => ({ text, identifier: false })) },
+);
+
 const trailingSlashes = fc.constantFrom('', '/', '//');
 
 const anyText = fc.string({ unit: 'grapheme', maxLength: 12 });
@@ -35,6 +48,12 @@ const anyText = fc.string({ unit: 'grapheme', maxLength: 12 });
 const anyPath = fc.oneof(
   fc
     .array(fc.oneof(word, identifier, anyText), { maxLength: MAX_SHORT_PATH_SEGMENTS })
+    .map((texts) => `/${texts.join('/')}`),
+  fc
+    .array(fc.oneof(word, wordWithLeadingDigits, identifier, anyText), {
+      maxLength: MAX_LONG_PATH_SEGMENTS,
+      size: 'max',
+    })
     .map((texts) => `/${texts.join('/')}`),
   fc.string({ unit: 'grapheme', maxLength: 80 }),
 );
@@ -82,11 +101,32 @@ describe('templatePath properties', () => {
     );
   });
 
-  it('changes nothing when it templates its own result again, as long as nothing was cut', () => {
+  it(`cuts a path longer than ${String(MAX_PATH_LENGTH)} characters after its last whole segment, or sends /${ID_PLACEHOLDER} when not even the first one fits`, () => {
+    fc.assert(
+      fc.property(
+        fc.array(longPathSegment, { minLength: 1, maxLength: MAX_LONG_PATH_SEGMENTS, size: 'max' }),
+        (segments) => {
+          const path = `/${segments.map(({ text }) => text).join('/')}`;
+          const templated = segments.map(({ text, identifier: isIdentifier }) =>
+            isIdentifier ? ID_PLACEHOLDER : text,
+          );
+          const wholePrefixes = templated.map(
+            (_, index) => `/${templated.slice(0, index + 1).join('/')}`,
+          );
+          const expected =
+            wholePrefixes.filter((prefix) => prefix.length <= MAX_PATH_LENGTH).at(-1) ??
+            `/${ID_PLACEHOLDER}`;
+
+          expect(templatePath(path, [])).toBe(expected);
+        },
+      ),
+    );
+  });
+
+  it('changes nothing when it templates its own result again, as the API does, whatever the length', () => {
     fc.assert(
       fc.property(anyPath, (path) => {
         const once = templatePath(path, []);
-        fc.pre(once.length < MAX_PATH_LENGTH);
 
         expect(templatePath(once, [])).toBe(once);
       }),
