@@ -1,5 +1,5 @@
 import type { PropertyValue } from './batch.js';
-import { templatePath } from './path-template.js';
+import { cutToWholeSegments, templatePath } from './path-template.js';
 
 export const API_REQUEST_EVENT = 'api_request';
 export const REQUEST_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
@@ -41,7 +41,10 @@ export function routeOf(url: unknown, rules: readonly string[]): string | undefi
     return undefined;
   }
   try {
-    return templatePath(new URL(url, URL_BASE).pathname, rules).slice(0, MAX_ROUTE_LENGTH);
+    return cutToWholeSegments(
+      templatePath(new URL(url, URL_BASE).pathname, rules),
+      MAX_ROUTE_LENGTH,
+    );
   } catch {
     return undefined;
   }

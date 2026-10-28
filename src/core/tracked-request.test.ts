@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ID_PLACEHOLDER } from './path-template.js';
 import {
   checkTrackedRequest,
   MAX_REQUEST_DURATION_MS,
@@ -33,8 +34,18 @@ describe('routeOf', () => {
     expect(routeOf('/vendas/abc-123/recibo', ['/vendas/:id/recibo'])).toBe('/vendas/:id/recibo');
   });
 
-  it(`cuts a route at ${String(MAX_ROUTE_LENGTH)} characters`, () => {
-    expect(routeOf(`/${'a'.repeat(150)}`, [])).toHaveLength(MAX_ROUTE_LENGTH);
+  it.each([
+    ['a word cut down to its leading digit', `/${'a'.repeat(97)}/0abc?x=1`, `/${'a'.repeat(97)}`],
+    ['an identifier cut down to a slash', `/${'a'.repeat(98)}/42`, `/${'a'.repeat(98)}`],
+  ])(
+    `cuts a route longer than ${String(MAX_ROUTE_LENGTH)} characters after its last whole segment: %s`,
+    (_, url, route) => {
+      expect(routeOf(url, [])).toBe(route);
+    },
+  );
+
+  it(`gives /${ID_PLACEHOLDER} when not even the first segment fits in ${String(MAX_ROUTE_LENGTH)} characters`, () => {
+    expect(routeOf(`/${'a'.repeat(150)}`, [])).toBe(`/${ID_PLACEHOLDER}`);
   });
 
   it.each([['http://[broken'], [42], [undefined]])('refuses %j', (url) => {
