@@ -30,9 +30,8 @@ showing every batch it would send, with no request leaving the page.
 
 </div>
 
-> **Status:** `pyxis-analytics` is on npm, every release published from GitHub Actions with
-> provenance, and measures sites in production, the Pyxis home page among them. Every function
-> below is validated against the API's contract on each push (see [Roadmap](#roadmap)).
+> **Status:** on npm as `pyxis-analytics`, every release published from GitHub Actions with
+> provenance, measuring sites in production, the Pyxis home page among them.
 
 ## Ecosystem
 
@@ -306,17 +305,8 @@ against the upstream document, so a breaking change in the API shows up here the
 
 ## Roadmap
 
-- [x] Package skeleton, quality gates, release and publish pipeline
-- [x] Core: queue, batching, transport, retry, session, privacy signals, opt-out
-- [x] Page views: History API, path templates, query sanitizing, attribution
-- [x] `track`, `identify`, `reset`, contract test against the API
-- [x] Release 0.1.0 to npm with provenance
-- [x] `trackRequest`
-- [x] Playground on GitHub Pages
-- [x] `trackingStatus()` for opt-out switches
-- [x] Browsers driven by automation are not measured
-- [x] `referrer` option, for a first page reached through a redirect
-- [x] A page sends nothing more after the API refuses its batch
+What shipped, release by release, is in the [CHANGELOG](CHANGELOG.md) and the
+[GitHub releases](https://github.com/samuelcsantana/pyxis-sdk/releases).
 
 ## Contributing and license
 
