@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.4](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.5.3...v0.5.4) (2026-10-29)
+
+
+### Bug Fixes
+
+* **core:** cut a long path after its last whole segment ([6393c90](https://github.com/samuelcsantana/pyxis-sdk/commit/6393c903bb2f02932a533ea9fcb3a1d61a67c3b4))
+* **core:** cut a long request route after its last whole segment ([cfaaefd](https://github.com/samuelcsantana/pyxis-sdk/commit/cfaaefd2ba8082b5f63af5250cdc8fb4b321b5dc))
+
+
+### Documentation
+
+* **readme:** say how long paths and routes are cut ([53843bc](https://github.com/samuelcsantana/pyxis-sdk/commit/53843bc58d22ae240e6183bc225c4719cca0937f))
+
 ## [0.5.3](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.5.2...v0.5.3) (2026-10-28)
 
 
