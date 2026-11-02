@@ -6,7 +6,7 @@
 </picture>
 
 **The browser tracker of Pyxis: page views, named events and request results, batched and sent
-without cookies, without personal data and without a single runtime dependency.**
+without cookies, with no IP address stored and without a single runtime dependency.**
 
 [![CI](https://github.com/samuelcsantana/pyxis-sdk/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/samuelcsantana/pyxis-sdk/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/samuelcsantana/pyxis-sdk/graph/badge.svg)](https://codecov.io/gh/samuelcsantana/pyxis-sdk)
