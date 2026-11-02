@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.0](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.5.4...v0.6.0) (2026-11-02)
+
+
+### Features
+
+* **build:** publish a classic script build that sets window.pyxis ([9d2399b](https://github.com/samuelcsantana/pyxis-sdk/commit/9d2399b3be2a151ca64c7a5a9d98b6be719ffb35))
+
+
+### Documentation
+
+* **adr:** record the classic script build and window.pyxis as public API ([722aef9](https://github.com/samuelcsantana/pyxis-sdk/commit/722aef9ad310315ef7a75974c6f37eb1ebba07b6))
+* **readme:** shorten the status note and point the roadmap at the changelog ([0158ce2](https://github.com/samuelcsantana/pyxis-sdk/commit/0158ce2191937b6b284d9af77acb4616d9a6f99d))
+* **readme:** show how to load the classic build with a plain script tag ([4a5c62b](https://github.com/samuelcsantana/pyxis-sdk/commit/4a5c62b3e9fc3286b7b1c778e345ad0a1b3f5b57))
+
 ## [0.5.4](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.5.3...v0.5.4) (2026-10-29)
 
 
