@@ -4,7 +4,8 @@ Date: 2026-10-05
 
 ## Status
 
-Accepted; amends the size budget of [ADR 0003](0003-zero-dependencies.md)
+Accepted; amends the size budget of [ADR 0003](0003-zero-dependencies.md). Amended on 2026-11-02:
+the budget is 6,144 bytes (see the amendment below).
 
 ## Context
 
@@ -29,3 +30,14 @@ The budget is 5,120 bytes gzipped, measured the same way (`scripts/check-size.mt
   feature of its plan.
 - The badge shows the real size, so the margin left is visible on every release.
 - Any further change to the budget is again a decision recorded in a new ADR.
+
+## Amendment (2026-11-02)
+
+Counting unique visitors without an identifier (the `pyxis:period` marker, the visit's kind on its
+entry event and the period read from the API's answer) took the module build from 5,053 to 5,430
+bytes gzipped and the classic script build from 5,072 to 5,450, over the 5,120 above. None of it
+can go without breaking what the feature promises: the kind needs the marker, the marker needs the
+answer, and the marker has to be deleted on opt-out and under Global Privacy Control or Do Not
+Track. The product owner approved a budget of at most 6 KB for this feature on 2026-11-02, so the
+budget is 6,144 bytes gzipped for both files, measured as before. Raising it again needs a new
+decision.
