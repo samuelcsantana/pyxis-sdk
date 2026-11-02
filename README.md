@@ -83,6 +83,17 @@ version; the Install page pins the exact one:
 </script>
 ```
 
+From 0.6.0, where only a classic script can be added (a tag manager, a theme's script field), load
+the classic build instead: it puts the same functions on `window.pyxis`
+([ADR 0007](docs/adr/0007-classic-script-build.md)).
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/pyxis-analytics@0.6/dist/pyxis.global.js"></script>
+<script>
+  pyxis.init({ key: 'pyxis_pk_…', endpoint: 'https://api.pyxis-analytics.dev' });
+</script>
+```
+
 A self-hosted Pyxis passes its own API as `endpoint`. A coding agent asked to install Pyxis can
 follow [llms.txt](https://pyxis-analytics.dev/llms.txt), which also lists the rules an
 integration must keep.
@@ -302,6 +313,7 @@ against the upstream document, so a breaking change in the API shows up here the
 | [0004](docs/adr/0004-five-kilobyte-budget.md)          | Raise the size budget to 5 KB                    |
 | [0005](docs/adr/0005-skip-automated-browsers.md)       | Do not measure browsers driven by automation     |
 | [0006](docs/adr/0006-stop-after-a-refused-batch.md)    | Send nothing more after a refused batch          |
+| [0007](docs/adr/0007-classic-script-build.md)          | A classic script build that sets `window.pyxis`  |
 
 ## Roadmap
 
