@@ -1,3 +1,5 @@
+import type { VisitorKind } from './visitor-kind.js';
+
 export type PropertyValue = string | number | boolean;
 
 export interface BatchAttribution {
@@ -18,6 +20,7 @@ export interface BatchEvent {
   readonly user_id?: string;
   readonly path: string;
   readonly attribution?: BatchAttribution;
+  readonly visitor?: VisitorKind;
   readonly properties?: Readonly<Record<string, PropertyValue>>;
 }
 

@@ -9,6 +9,7 @@ export function createBrowserDependencies(): TrackerDependencies {
     createId: () => createUuid(globalThis.crypto),
     random: Math.random,
     sessionStore: webStore(() => window.sessionStorage),
+    periodStore: webStore(() => window.localStorage),
     transport: browserTransport(
       typeof fetch === 'function' ? fetch.bind(globalThis) : undefined,
       typeof navigator.sendBeacon === 'function' ? navigator.sendBeacon.bind(navigator) : undefined,

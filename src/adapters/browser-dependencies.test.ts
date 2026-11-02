@@ -6,6 +6,7 @@ const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f
 describe('createBrowserDependencies', () => {
   afterEach(() => {
     sessionStorage.clear();
+    localStorage.clear();
     Object.defineProperty(navigator, 'sendBeacon', { value: undefined, configurable: true });
   });
 
@@ -24,6 +25,12 @@ describe('createBrowserDependencies', () => {
     createBrowserDependencies().sessionStore.write('pyxis:session', 'visit');
 
     expect(sessionStorage.getItem('pyxis:session')).toBe('visit');
+  });
+
+  it('keeps the visitor period in localStorage', () => {
+    createBrowserDependencies().periodStore.write('pyxis:period', 'period');
+
+    expect(localStorage.getItem('pyxis:period')).toBe('period');
   });
 
   it('sends through fetch when the browser has it', async () => {

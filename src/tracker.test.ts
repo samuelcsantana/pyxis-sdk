@@ -6,6 +6,7 @@ import { FLUSH_DELAY_MS, FLUSH_EVENT_COUNT } from './core/batch-policy.js';
 import type { ResolvedOptions } from './core/options.js';
 import { RETRY_DELAYS_MS, type SendOutcome } from './core/retry-policy.js';
 import { SESSION_IDLE_TIMEOUT_MS } from './core/session-policy.js';
+import { PERIOD_KEY, type VisitorKind, type VisitorPeriod } from './core/visitor-kind.js';
 import {
   createTracker,
   REFUSED_WARNING,
@@ -48,15 +49,22 @@ function setup(
 ) {
   let nextId = 0;
   const { transport, sent } = fakeTransport(outcomes);
+  const periodStore = memoryStore();
   const deps: TrackerDependencies = {
     now: () => Date.now(),
     createId: () => `id-${String(++nextId)}`,
     random: () => 0.5,
     sessionStore,
+    periodStore,
     transport,
     ...(warn === undefined ? {} : { warn }),
   };
-  return { tracker: createTracker({ ...OPTIONS, ...options }, deps), sent, sessionStore };
+  return {
+    tracker: createTracker({ ...OPTIONS, ...options }, deps),
+    sent,
+    sessionStore,
+    periodStore,
+  };
 }
 
 async function settle(): Promise<void> {
@@ -373,6 +381,7 @@ describe('createTracker', () => {
       createId: () => 'id',
       random: () => 0.5,
       sessionStore: memoryStore(),
+      periodStore: memoryStore(),
       transport: {
         send: () => {
           calls += 1;
@@ -455,5 +464,175 @@ describe('createTracker', () => {
     await vi.advanceTimersByTimeAsync(60_000);
 
     expect(sent).toHaveLength(1);
+  });
+});
+
+const PERIOD: VisitorPeriod = {
+  day_ends_at: '2026-10-07T03:00:00.000Z',
+  month_ends_at: '2026-11-01T03:00:00.000Z',
+};
+const STORED_PERIOD = JSON.stringify(PERIOD);
+const ENTRY = { name: 'page_view', path: '/', entryAttribution: { from_ad_click: false } };
+const ANSWER_WITH_PERIOD: SendOutcome = { kind: 'response', status: 202, period: PERIOD };
+const ANSWER_WITHOUT_PERIOD: SendOutcome = { kind: 'response', status: 202, period: 'off' };
+
+describe('createTracker and unique visitors', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
+    vi.setSystemTime(START);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('labels only the entry event of a visit, as the first of this browser without a marker', () => {
+    const { tracker, sent } = setup();
+
+    tracker.enqueue(ENTRY);
+    tracker.enqueue({ name: 'cta_clicked', path: '/' });
+    tracker.enqueue({ ...ENTRY, path: '/pricing' });
+    tracker.flush();
+
+    expect(sent[0]?.batch.events.map((event) => event.visitor)).toEqual([
+      'first_visit',
+      undefined,
+      undefined,
+    ]);
+  });
+
+  it('labels nothing when no event of the visit claims the entry', () => {
+    const { tracker, sent } = setup();
+
+    tracker.enqueue({ name: 'cta_clicked', path: '/' });
+    tracker.identify('user_42', '/');
+    tracker.flush();
+
+    expect(sent[0]?.batch.events.some((event) => 'visitor' in event)).toBe(false);
+  });
+
+  it.each<[string, number, VisitorKind]>([
+    ['another one today before the day ends', START, 'again_today'],
+    ['the first today once the day ended', Date.parse(PERIOD.day_ends_at), 'first_today'],
+    [
+      'the first this month once the month ended',
+      Date.parse(PERIOD.month_ends_at),
+      'first_this_month',
+    ],
+  ])('labels a visit with a marker %s, by the device clock', (_case, now, kind) => {
+    vi.setSystemTime(now);
+    const { tracker, sent, periodStore } = setup();
+    periodStore.write(PERIOD_KEY, STORED_PERIOD);
+
+    tracker.enqueue(ENTRY);
+    tracker.flush();
+
+    expect(sent[0]?.batch.events[0]?.visitor).toBe(kind);
+  });
+
+  it('labels a visit the first of this browser when the stored marker is not a period', () => {
+    const { tracker, sent, periodStore } = setup();
+    periodStore.write(PERIOD_KEY, '{"day_ends_at":"soon"}');
+
+    tracker.enqueue(ENTRY);
+    tracker.flush();
+
+    expect(sent[0]?.batch.events[0]?.visitor).toBe('first_visit');
+  });
+
+  it('tells the kind once, when the entry is recorded, from the marker at that moment', () => {
+    const { tracker, sent, periodStore } = setup();
+
+    tracker.enqueue(ENTRY);
+    periodStore.write(PERIOD_KEY, STORED_PERIOD);
+    tracker.flush();
+
+    expect(sent[0]?.batch.events[0]?.visitor).toBe('first_visit');
+  });
+
+  it('keeps the period the API answers, and tells the next visit from it', async () => {
+    const { tracker, sent, periodStore } = setup({}, [ANSWER_WITH_PERIOD]);
+
+    tracker.enqueue(ENTRY);
+    tracker.flush();
+    await settle();
+    const kept = periodStore.read(PERIOD_KEY);
+    await vi.advanceTimersByTimeAsync(SESSION_IDLE_TIMEOUT_MS + 1);
+    tracker.enqueue(ENTRY);
+    tracker.flush();
+
+    expect(JSON.parse(kept ?? 'null')).toEqual(PERIOD);
+    expect(sent.map((entry) => entry.batch.events[0]?.visitor)).toEqual([
+      'first_visit',
+      'again_today',
+    ]);
+  });
+
+  it('replaces the kept period with the one of a later answer', async () => {
+    const tomorrow: VisitorPeriod = {
+      day_ends_at: '2026-10-08T03:00:00.000Z',
+      month_ends_at: PERIOD.month_ends_at,
+    };
+    const { tracker, periodStore } = setup({}, [
+      { kind: 'response', status: 202, period: tomorrow },
+    ]);
+    periodStore.write(PERIOD_KEY, STORED_PERIOD);
+
+    tracker.enqueue(ENTRY);
+    tracker.flush();
+    await settle();
+
+    expect(JSON.parse(periodStore.read(PERIOD_KEY) ?? 'null')).toEqual(tomorrow);
+  });
+
+  it('deletes the marker when a successful answer comes without a period', async () => {
+    const { tracker, periodStore } = setup({}, [ANSWER_WITHOUT_PERIOD]);
+    periodStore.write(PERIOD_KEY, STORED_PERIOD);
+
+    tracker.enqueue(ENTRY);
+    tracker.flush();
+    await settle();
+
+    expect(periodStore.read(PERIOD_KEY)).toBeNull();
+  });
+
+  it.each<[string, SendOutcome]>([
+    ['a beacon hand-off', { kind: 'handed-off' }],
+    ['a network error', { kind: 'network-error' }],
+    ['an answer that is not a success', { kind: 'response', status: 400 }],
+    ['a refused batch', { kind: 'response', status: 403 }],
+    ['a successful answer whose body says nothing', { kind: 'response', status: 202 }],
+  ])('keeps the marker as it was on %s', async (_case, outcome) => {
+    const { tracker, periodStore } = setup({}, [outcome]);
+    periodStore.write(PERIOD_KEY, STORED_PERIOD);
+
+    tracker.enqueue(ENTRY);
+    tracker.flush();
+    await settle();
+
+    expect(periodStore.read(PERIOD_KEY)).toBe(STORED_PERIOD);
+  });
+
+  it('keeps nothing from an answer that arrives after the tracker was disposed', async () => {
+    const { tracker, periodStore } = setup({}, [ANSWER_WITH_PERIOD]);
+
+    tracker.enqueue(ENTRY);
+    tracker.flush();
+    tracker.dispose();
+    await settle();
+
+    expect(periodStore.read(PERIOD_KEY)).toBeNull();
+  });
+
+  it('deletes nothing on an answer without a period after the tracker was disposed', async () => {
+    const { tracker, periodStore } = setup({}, [ANSWER_WITHOUT_PERIOD]);
+    periodStore.write(PERIOD_KEY, STORED_PERIOD);
+
+    tracker.enqueue(ENTRY);
+    tracker.flush();
+    tracker.dispose();
+    await settle();
+
+    expect(periodStore.read(PERIOD_KEY)).toBe(STORED_PERIOD);
   });
 });
