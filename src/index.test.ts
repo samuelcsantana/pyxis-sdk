@@ -1,7 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { OPT_OUT_KEY, OPT_OUT_VALUE } from './core/privacy.js';
+import { PERIOD_KEY } from './core/visitor-kind.js';
 
 const OPTIONS = { key: 'pyxis_pk_test', endpoint: 'https://api.pyxis.example.com' };
+const PERIOD = {
+  day_ends_at: '2026-11-03T03:00:00.000Z',
+  month_ends_at: '2026-12-01T03:00:00.000Z',
+};
+const STORED_PERIOD = JSON.stringify(PERIOD);
 
 type PublicApi = typeof import('./index.js');
 
@@ -131,8 +137,71 @@ describe('the public API', () => {
         name: 'page_view',
         path: '/',
         attribution: { from_ad_click: false },
+        visitor: 'first_visit',
       }),
     ]);
+  });
+
+  it('keeps the period the API answers in localStorage, and only its two instants', async () => {
+    fetchSpy.mockImplementationOnce(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({ accepted: 1, duplicates: 0, rejected: 0, visitor_period: PERIOD }),
+          { status: 202 },
+        ),
+      ),
+    );
+    const pyxis = await loadFresh();
+    pyxis.init(OPTIONS);
+
+    window.dispatchEvent(new Event('pagehide'));
+
+    await vi.waitFor(() => {
+      expect(localStorage.getItem(PERIOD_KEY)).toBe(STORED_PERIOD);
+    });
+  });
+
+  it.each([
+    [
+      'Global Privacy Control',
+      () => {
+        setNavigatorValue('globalPrivacyControl', true);
+      },
+    ],
+    [
+      'Do Not Track',
+      () => {
+        setNavigatorValue('doNotTrack', '1');
+      },
+    ],
+    [
+      'an earlier opt-out',
+      () => {
+        localStorage.setItem(OPT_OUT_KEY, OPT_OUT_VALUE);
+      },
+    ],
+  ])('deletes the visitor marker and sends nothing under %s', async (_label, arrange) => {
+    localStorage.setItem(PERIOD_KEY, STORED_PERIOD);
+    arrange();
+    const pyxis = await loadFresh();
+
+    pyxis.init(OPTIONS);
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(localStorage.getItem(PERIOD_KEY)).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('neither reads nor touches the visitor marker in a browser driven by automation', async () => {
+    localStorage.setItem(PERIOD_KEY, STORED_PERIOD);
+    setNavigatorValue('webdriver', true);
+    const pyxis = await loadFresh();
+
+    pyxis.init(OPTIONS);
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(localStorage.getItem(PERIOD_KEY)).toBe(STORED_PERIOD);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   describe('when the document has a referrer', () => {
@@ -412,6 +481,45 @@ describe('the public API', () => {
 
     expect(localStorage.getItem(OPT_OUT_KEY)).toBe(OPT_OUT_VALUE);
     expect(removeListener.mock.calls.some(([type]) => type === 'visibilitychange')).toBe(true);
+  });
+
+  it('deletes the visitor marker on opt-out, with or without init', async () => {
+    const pyxis = await loadFresh();
+    localStorage.setItem(PERIOD_KEY, STORED_PERIOD);
+    pyxis.optOut();
+    pyxis.optIn();
+    localStorage.setItem(PERIOD_KEY, STORED_PERIOD);
+    pyxis.init(OPTIONS);
+
+    pyxis.optOut();
+
+    expect(localStorage.getItem(PERIOD_KEY)).toBeNull();
+  });
+
+  it('keeps nothing from an answer that arrives after the visitor opted out', async () => {
+    let answer: (response: Response) => void = () => undefined;
+    fetchSpy.mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    const pyxis = await loadFresh();
+    pyxis.init(OPTIONS);
+    window.dispatchEvent(new Event('pagehide'));
+
+    pyxis.optOut();
+    answer(
+      new Response(
+        JSON.stringify({ accepted: 1, duplicates: 0, rejected: 0, visitor_period: PERIOD }),
+        { status: 202 },
+      ),
+    );
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+
+    expect(localStorage.getItem(PERIOD_KEY)).toBeNull();
   });
 
   it('opts out before init too', async () => {
