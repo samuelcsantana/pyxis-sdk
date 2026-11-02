@@ -21,6 +21,7 @@ import {
   type TrackingStatus,
   trackingStatusOf,
 } from './core/privacy.js';
+import { PERIOD_KEY } from './core/visitor-kind.js';
 import { startPageViews } from './page-views.js';
 import { createTracker, type Tracker } from './tracker.js';
 
@@ -102,6 +103,9 @@ function start(options: PyxisOptions): void {
   const signals = currentPrivacySignals();
   if (signals.automated) {
     debugWarn('measuring is off in a browser driven by automation (navigator.webdriver is true)');
+  }
+  if (trackingStatusOf(signals) !== 'on') {
+    localStore().remove(PERIOD_KEY);
   }
   if (!isTrackingAllowed(signals)) {
     return;
@@ -198,7 +202,9 @@ export function optOut(): void {
       return;
     }
     optedOutThisPage = true;
-    localStore().write(OPT_OUT_KEY, OPT_OUT_VALUE);
+    const store = localStore();
+    store.write(OPT_OUT_KEY, OPT_OUT_VALUE);
+    store.remove(PERIOD_KEY);
     stop();
   });
 }
