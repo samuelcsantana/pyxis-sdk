@@ -48,7 +48,7 @@ A tracker runs on every page of the site it measures, so it decides what leaves 
 browser. This one is built so that nothing personal can: no cookie, no identifier that survives the
 tab, URLs reduced to path templates, query strings dropped except campaign tags, and "do not
 track" signals honored before anything is queued. It is small enough to forget about: the budget
-is 5 KB gzipped, enforced in CI.
+is 6 KB gzipped, enforced in CI.
 
 Read more: [why Pyxis was built and what it never stores][post], the introduction post on the
 author's blog, also in [Portuguese][post-pt] and [Spanish][post-es].
@@ -310,7 +310,7 @@ against the upstream document, so a breaking change in the API shows up here the
 | [0001](docs/adr/0001-record-architecture-decisions.md) | Record architecture decisions                    |
 | [0002](docs/adr/0002-functional-core.md)               | Functional core, thin shell                      |
 | [0003](docs/adr/0003-zero-dependencies.md)             | Zero runtime dependencies and a 3 KB size budget |
-| [0004](docs/adr/0004-five-kilobyte-budget.md)          | Raise the size budget to 5 KB                    |
+| [0004](docs/adr/0004-five-kilobyte-budget.md)          | Raise the size budget to 5 KB, amended to 6 KB   |
 | [0005](docs/adr/0005-skip-automated-browsers.md)       | Do not measure browsers driven by automation     |
 | [0006](docs/adr/0006-stop-after-a-refused-batch.md)    | Send nothing more after a refused batch          |
 | [0007](docs/adr/0007-classic-script-build.md)          | A classic script build that sets `window.pyxis`  |

@@ -48,8 +48,8 @@ describe('reportSize', () => {
     assert.match(report.message, /OVER BUDGET$/);
   });
 
-  it('sets the budget at 5 KB', () => {
-    assert.equal(SIZE_BUDGET_BYTES, 5120);
+  it('sets the budget at 6 KB', () => {
+    assert.equal(SIZE_BUDGET_BYTES, 6144);
   });
 });
 

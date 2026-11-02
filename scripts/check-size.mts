@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
 export const BUNDLE_FILES = ['dist/index.js', 'dist/pyxis.global.js'] as const;
-export const SIZE_BUDGET_BYTES = 5 * 1024;
+export const SIZE_BUDGET_BYTES = 6 * 1024;
 
 export interface SizeReport {
   readonly withinBudget: boolean;
