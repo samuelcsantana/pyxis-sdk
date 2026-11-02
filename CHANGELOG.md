@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.0](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.6.0...v0.7.0) (2026-11-02)
+
+
+### Features
+
+* **core:** tell a visit's kind from the period the API answered ([12e7b4c](https://github.com/samuelcsantana/pyxis-sdk/commit/12e7b4ca230ad1e96c1c837619748930a13b45ca))
+* **privacy:** delete the visitor marker on opt-out and under GPC or DNT ([b48bf65](https://github.com/samuelcsantana/pyxis-sdk/commit/b48bf655e4e8b9dde2be03ae79646f117c65c890))
+* **tracker:** label each visit's entry event with its visitor kind ([6098874](https://github.com/samuelcsantana/pyxis-sdk/commit/6098874717aa5b097ae28960308c5b97c276a1b8))
+* **transport:** read the visitor period from a successful answer ([522217d](https://github.com/samuelcsantana/pyxis-sdk/commit/522217d84d924f4b92078e73f999d70795ef929c))
+
+
+### Documentation
+
+* **adr:** record why the tracker keeps a period marker and not an identifier ([5d7d9b0](https://github.com/samuelcsantana/pyxis-sdk/commit/5d7d9b049fab49c15795bdb3efbc7e531a2047af))
+* **readme:** describe the visitor kind and the pyxis:period marker ([24cdf6b](https://github.com/samuelcsantana/pyxis-sdk/commit/24cdf6babb28b523ae60a8feaa7c443f968c5e43))
+
 ## [0.6.0](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.5.4...v0.6.0) (2026-11-02)
 
 
