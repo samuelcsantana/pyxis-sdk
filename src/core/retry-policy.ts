@@ -1,8 +1,15 @@
+import type { PeriodAnswer } from './visitor-kind.js';
+
 export const RETRY_DELAYS_MS: readonly number[] = [1000, 2000, 4000, 8000, 16000];
 export const RETRY_JITTER = 0.2;
 
 export type SendOutcome =
-  | { readonly kind: 'response'; readonly status: number; readonly retryAfterSeconds?: number }
+  | {
+      readonly kind: 'response';
+      readonly status: number;
+      readonly retryAfterSeconds?: number;
+      readonly period?: PeriodAnswer;
+    }
   | { readonly kind: 'network-error' }
   | { readonly kind: 'handed-off' };
 
