@@ -14,7 +14,7 @@ export default defineConfig({
     launchOptions: { args: [NAVIGATOR_WEBDRIVER_OFF] },
   },
   webServer: {
-    command: 'npm run build:playground && node scripts/serve-playground.mts',
+    command: 'npm run build && npm run build:playground && node scripts/serve-playground.mts',
     url: BASE_URL,
     reuseExistingServer: false,
     env: { PLAYGROUND_PORT: String(PORT) },
