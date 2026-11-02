@@ -19,6 +19,13 @@ import {
   serializeSession,
   touchSession,
 } from './core/session-policy.js';
+import {
+  parseStoredPeriod,
+  PERIOD_KEY,
+  serializePeriod,
+  type VisitorKind,
+  visitorKindOf,
+} from './core/visitor-kind.js';
 
 export const SESSION_KEY = 'pyxis:session';
 
@@ -27,6 +34,7 @@ export interface TrackerDependencies {
   readonly createId: () => string;
   readonly random: () => number;
   readonly sessionStore: KeyValueStore;
+  readonly periodStore: KeyValueStore;
   readonly transport: Transport;
   readonly warn?: (message: string) => void;
 }
@@ -64,6 +72,18 @@ export function createTracker(options: ResolvedOptions, deps: TrackerDependencie
     const updated = isEntry ? recordEntry(session) : session;
     deps.sessionStore.write(SESSION_KEY, serializeSession(updated));
     return { session: updated, isEntry };
+  };
+
+  const visitorKind = (): VisitorKind =>
+    visitorKindOf(parseStoredPeriod(deps.periodStore.read(PERIOD_KEY)), deps.now());
+
+  const keepPeriod = (outcome: SendOutcome): void => {
+    const period = outcome.kind === 'response' ? outcome.period : undefined;
+    if (period === 'off') {
+      deps.periodStore.remove(PERIOD_KEY);
+    } else if (period !== undefined) {
+      deps.periodStore.write(PERIOD_KEY, serializePeriod(period));
+    }
   };
 
   const tryNotifyBatch = (batch: Batch): void => {
@@ -111,6 +131,7 @@ export function createTracker(options: ResolvedOptions, deps: TrackerDependencie
     if (disposed) {
       return;
     }
+    keepPeriod(outcome);
     const verdict = judgeOutcome(outcome);
     if (verdict === 'stop') {
       deps.warn?.(REFUSED_WARNING);
@@ -167,7 +188,7 @@ export function createTracker(options: ResolvedOptions, deps: TrackerDependencie
       session_id: session.id,
       path: input.path,
       ...(session.userId === undefined ? {} : { user_id: session.userId }),
-      ...(isEntry ? { attribution: input.entryAttribution } : {}),
+      ...(isEntry ? { attribution: input.entryAttribution, visitor: visitorKind() } : {}),
       ...(input.properties === undefined ? {} : { properties: input.properties }),
     };
     queue = enqueue(queue, event).queue;
