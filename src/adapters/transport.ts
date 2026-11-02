@@ -1,4 +1,5 @@
 import { parseRetryAfter, type SendOutcome } from '../core/retry-policy.js';
+import { periodAnswerOf } from '../core/visitor-kind.js';
 
 export interface Transport {
   send(url: string, body: string, pageHidden: boolean): Promise<SendOutcome>;
@@ -27,9 +28,13 @@ export function browserTransport(fetchImpl?: FetchLike, beacon?: BeaconLike): Tr
       headers: { 'Content-Type': BODY_CONTENT_TYPE },
     });
     const retryAfterSeconds = parseRetryAfter(response.headers.get('Retry-After'));
-    return retryAfterSeconds === undefined
-      ? { kind: 'response', status: response.status }
-      : { kind: 'response', status: response.status, retryAfterSeconds };
+    const period = response.ok ? periodAnswerOf(await response.text().catch(() => '')) : undefined;
+    return {
+      kind: 'response',
+      status: response.status,
+      ...(retryAfterSeconds === undefined ? {} : { retryAfterSeconds }),
+      ...(period === undefined ? {} : { period }),
+    };
   };
 
   return {

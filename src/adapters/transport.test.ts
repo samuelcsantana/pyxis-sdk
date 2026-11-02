@@ -4,8 +4,26 @@ import { BODY_CONTENT_TYPE, browserTransport } from './transport.js';
 const URL_ = 'https://api.pyxis.example.com/v1/batch';
 const BODY = '{"key":"pyxis_pk_x","sent_at":"2026-10-06T14:03:11.120Z","events":[]}';
 
+const PERIOD = {
+  day_ends_at: '2026-11-03T03:00:00.000Z',
+  month_ends_at: '2026-12-01T03:00:00.000Z',
+};
+const INGEST_RESULT = { accepted: 1, duplicates: 0, rejected: 0 };
+
 function respondWith(status: number, headers: Record<string, string> = {}) {
   return vi.fn(() => Promise.resolve(new Response(null, { status, headers })));
+}
+
+function answerWith(status: number, body: BodyInit) {
+  return vi.fn(() => Promise.resolve(new Response(body, { status })));
+}
+
+function bodyThatBreaks(): ReadableStream<Uint8Array> {
+  return new ReadableStream({
+    start: (controller) => {
+      controller.error(new TypeError('the connection was reset'));
+    },
+  });
 }
 
 describe('browserTransport', () => {
@@ -32,6 +50,52 @@ describe('browserTransport', () => {
     );
 
     expect(outcome).toEqual({ kind: 'response', status: 429, retryAfterSeconds: 30 });
+  });
+
+  it('reads the period from a successful answer that carries it', async () => {
+    const answer = JSON.stringify({ ...INGEST_RESULT, visitor_period: PERIOD });
+
+    const outcome = await browserTransport(answerWith(202, answer)).send(URL_, BODY, false);
+
+    expect(outcome).toEqual({ kind: 'response', status: 202, period: PERIOD });
+  });
+
+  it('reads a successful answer without a period as the option being off', async () => {
+    const outcome = await browserTransport(answerWith(202, JSON.stringify(INGEST_RESULT))).send(
+      URL_,
+      BODY,
+      false,
+    );
+
+    expect(outcome).toEqual({ kind: 'response', status: 202, period: 'off' });
+  });
+
+  it('decides nothing about the period from a successful answer with an empty body', async () => {
+    expect(await browserTransport(respondWith(202)).send(URL_, BODY, false)).toEqual({
+      kind: 'response',
+      status: 202,
+    });
+  });
+
+  it('keeps a successful answer whose body breaks off a response, deciding nothing', async () => {
+    const beacon = vi.fn(() => true);
+
+    const outcome = await browserTransport(answerWith(202, bodyThatBreaks()), beacon).send(
+      URL_,
+      BODY,
+      true,
+    );
+
+    expect(outcome).toEqual({ kind: 'response', status: 202 });
+    expect(beacon).not.toHaveBeenCalled();
+  });
+
+  it('never reads the period from an answer that is not a success', async () => {
+    const answer = JSON.stringify({ ...INGEST_RESULT, visitor_period: PERIOD });
+
+    const outcome = await browserTransport(answerWith(400, answer)).send(URL_, BODY, false);
+
+    expect(outcome).toEqual({ kind: 'response', status: 400 });
   });
 
   it('reports a network error while the page is visible, without a beacon', async () => {
