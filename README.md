@@ -135,7 +135,7 @@ reset();
 
 A route change that keeps the same templated path records nothing, so routers that call
 `replaceState` on their own do not inflate page views. Only the first page view of a visit carries
-its attribution (referrer host, campaign tags, ad click flag).
+its attribution (referrer host, campaign tags, ad click flag) and its visitor kind (below).
 
 A page that sends the visitor elsewhere as soon as it loads, such as a language redirect with
 `location.replace`, leaves the next page with its own address as `document.referrer`, so the site
@@ -201,9 +201,9 @@ status `0` means no response arrived. An optional `errorCode` carries your API's
   is set. To see events in your own end-to-end tests, launch Chromium with
   `--disable-blink-features=AutomationControlled`, which makes `navigator.webdriver` false
   ([ADR 0005](docs/adr/0005-skip-automated-browsers.md)).
-- `optOut()` writes a single `pyxis:opt-out` marker to `localStorage`, the only thing the SDK
-  keeps beyond the tab, so the choice holds on later visits. With storage blocked it still holds
-  for the rest of the page. Events not yet sent are dropped: the queue leaves every 5 seconds, or
+- `optOut()` writes a single `pyxis:opt-out` marker to `localStorage`, so the choice holds on later
+  visits, and deletes the visitor marker described below. With storage blocked it still holds for
+  the rest of the page. Events not yet sent are dropped: the queue leaves every 5 seconds, or
   with `sendBeacon` when the page is hidden.
 - `optIn()` removes the marker and, if `init()` already ran, starts measuring in the same page,
   beginning with a page view of the current page. Under Global Privacy Control, Do Not Track or
@@ -212,6 +212,18 @@ status `0` means no response arrived. An optional `errorCode` carries your API's
   Track win over the visitor's choice, since a switch cannot turn them off; outside a browser
   (server rendering) it answers `'on'`, so read it again on the client. Automation does not change
   it: the switch is for people, and their browsers block nothing.
+- Unique visitors are counted without an identifier, and the browser keeps something for them only
+  when the project's owner turns the option on in the dashboard; the site's code does nothing. The
+  API then answers each batch with when the site's day and month end, two instants that are the
+  same for every visitor that day, and the tracker keeps only those two in `localStorage` as
+  `pyxis:period`. The first event of every visit carries `visitor`, told from that marker and the
+  device clock: `first_visit` without a marker, `first_this_month` once the month ended,
+  `first_today` once the day ended, `again_today` before that. It is sent on every visit, as
+  `first_visit` when there is no marker, and the API drops it when the option is off; the marker
+  itself is never sent. A successful answer without the period deletes the marker, and so do
+  `optOut()` and a browser that sends Global Privacy Control or Do Not Track, which sends nothing;
+  under automation nothing is read, written or sent
+  ([ADR 0008](docs/adr/0008-visitor-period-marker.md)).
 - Batches are sent with `credentials: "omit"`: no cookie of any domain travels with them.
 - No key configured means nothing runs, which keeps tests and local development clean.
 
@@ -222,13 +234,14 @@ flowchart LR
   subgraph Shell["Thin shell"]
     Navigation["History API"] --> Tracker
     Tracker --> Transport["fetch keepalive<br>sendBeacon"]
-    Tracker --> Storage["sessionStorage<br>localStorage (opt-out)"]
+    Tracker --> Storage["sessionStorage<br>localStorage (opt-out, visitor period)"]
   end
   subgraph Core["Functional core (pure)"]
     Paths["path templates"]
     Query["query sanitizer"]
     Batching["batch policy"]
     Retry["retry policy"]
+    Visitor["visitor kind"]
   end
   Tracker --> Core
   Transport -- "POST /v1/batch" --> API["pyxis-api"]
@@ -259,7 +272,7 @@ npm run test:cov       # unit tests in jsdom, 100% coverage required
 npm run test:tooling   # the lint rule and the scripts
 npx vitest run src/contract.test.ts   # the contract test alone
 npx vitest run property   # the property-based tests alone
-npm run test:e2e       # the playground in Chromium: batches valid, nothing sent, none if automated
+npm run test:e2e       # Chromium: the playground, the classic build, the visitor marker
 ```
 
 Coverage must stay at **100% of statements, branches, functions and lines** of `src/`; CI fails
@@ -273,16 +286,18 @@ counterexample. They cover path templating (identifier-shaped segments become `:
 cut between whole segments at 256 characters, a result the API's templating leaves unchanged),
 property sanitizing (the limits, every key kept or reported as dropped), batching (every event
 sent once, in order, within both limits), the retry delays and `Retry-After`, attribution (UTM
-limits, only the referrer's host) and request tracking (no query, fragment or e-mail address in
-the route, the same cut at 100 characters). `vitest.setup.ts` fixes the seed (`20261028`) and the
-run count for every file, so CI, the pre-commit hook and a local run test the same inputs; a
-failure prints the seed and path that replay it.
+limits, only the referrer's host), the visitor kind (each boundary of the day and the month, a
+marker that keeps only its two instants, garbage never read as one) and request tracking (no
+query, fragment or e-mail address in the route, the same cut at 100 characters).
+`vitest.setup.ts` fixes the seed (`20261028`) and the run count for every file, so CI, the
+pre-commit hook and a local run test the same inputs; a failure prints the seed and path that
+replay it.
 
 ## Project structure
 
 ```text
 src/
-├── core/        pure rules: batching, retries, session, privacy, paths, attribution, input checks
+├── core/        pure rules: batching, retries, session, privacy, paths, attribution, visitors, checks
 ├── adapters/    browser edges: transport, storage, navigation, page lifecycle, ids
 ├── tracker.ts   the queue, the session and the timers
 ├── page-views.ts automatic page views
@@ -314,6 +329,7 @@ against the upstream document, so a breaking change in the API shows up here the
 | [0005](docs/adr/0005-skip-automated-browsers.md)       | Do not measure browsers driven by automation     |
 | [0006](docs/adr/0006-stop-after-a-refused-batch.md)    | Send nothing more after a refused batch          |
 | [0007](docs/adr/0007-classic-script-build.md)          | A classic script build that sets `window.pyxis`  |
+| [0008](docs/adr/0008-visitor-period-marker.md)         | Tell a visit's kind from a period marker         |
 
 ## Roadmap
 
