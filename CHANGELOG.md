@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.7.0...v0.7.1) (2026-11-03)
+
+
+### Documentation
+
+* say no cookies and no stored IPs in the readme and the npm description ([c5dd627](https://github.com/samuelcsantana/pyxis-sdk/commit/c5dd6272d52a58843076012899f982ffc20c7ed7))
+
 ## [0.7.0](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.6.0...v0.7.0) (2026-11-02)
 
 
