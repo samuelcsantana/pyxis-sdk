@@ -27,6 +27,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./auto": {
+      "types": "./dist/auto.d.ts",
+      "import": "./dist/auto.js"
     }
   },
   "files": [
@@ -34,7 +38,7 @@
   ],
   "scripts": {
     "prebuild": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
-    "build": "esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --sourcemap --outfile=dist/index.js && esbuild src/global.ts --bundle --minify --format=iife --target=es2020 --sourcemap --outfile=dist/pyxis.global.js && tsc -p tsconfig.build.json",
+    "build": "esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --sourcemap --outfile=dist/index.js && esbuild src/auto.ts --bundle --minify --format=esm --target=es2020 --sourcemap --external:./index.js --outfile=dist/auto.js && esbuild src/global.ts --bundle --minify --format=iife --target=es2020 --sourcemap --outfile=dist/pyxis.global.js && tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json && tsc -p scripts/tsconfig.json && tsc -p tsconfig.e2e.json",
     "test": "vitest run",
     "test:cov": "vitest run --coverage",
