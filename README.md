@@ -185,6 +185,44 @@ The URL is reduced to a templated route (`/api/orders/42?coupon=X` becomes `/api
 status `0` means no response arrived. An optional `errorCode` carries your API's machine error key
 (`[a-z0-9_.]{1,64}`), never a message.
 
+### Automatic events
+
+Outbound links, file downloads and form submissions can be recorded without writing a `track`
+call. They ship as a separate entry point, so a site that does not use them downloads none of
+their code, and every one is off until switched on:
+
+```ts
+import { init } from 'pyxis-analytics';
+import { autoEvents } from 'pyxis-analytics/auto';
+
+init({ key: 'pyxis_pk_…', endpoint: 'https://api.pyxis-analytics.dev' });
+const stop = autoEvents({ outboundLinks: true, fileDownloads: true, formSubmits: true });
+```
+
+| Option               | Default | Event and properties                                                                    |
+| -------------------- | ------- | --------------------------------------------------------------------------------------- |
+| `outboundLinks`      | `false` | `outbound_link_clicked` with `domain`: the link's host, lower-case, without `www.`      |
+| `fileDownloads`      | `false` | `file_downloaded` with `extension` and `file_path`, the file's templated path           |
+| `downloadExtensions` | a list  | Replaces the extensions that count as a download (`pdf`, `zip`, `docx`, `mp4` and more) |
+| `formSubmits`        | `false` | `form_submitted` with `form`: the form's `id`, else its `name`, else nothing            |
+| `debug`              | `false` | Report in the console an internal error the listeners swallowed                         |
+
+- What never leaves the browser: an outbound link's path, query and fragment; a file's query
+  string (signed URLs carry tokens there); any value typed into a form. Paths go through the same
+  templating as page views, so `/invoices/20261105123/receipt.pdf` becomes
+  `/invoices/:id/receipt.pdf`.
+- A link counts when it is clicked with the main button or opened with the middle one, and only
+  for `http` and `https`: `mailto:` and `tel:` links are never read. A link to another subdomain
+  of the same site is outbound; a link with the `download` attribute is a download whatever its
+  extension, and a file on another site is a download, not an outbound link.
+- The listeners sit on `document` in the capture phase, so a page that cancels a click or stops
+  it from bubbling is still measured. Under Global Privacy Control or Do Not Track they are not
+  added at all; without a key, before `init`, after `optOut()` or under automation the events go
+  through `track`, which sends nothing.
+- Calling `autoEvents` again replaces the previous options; the function it returns removes the
+  listeners. Each kind is a named event, so it shows up in the dashboard like any other and can
+  be a funnel step ([ADR 0009](docs/adr/0009-automatic-events-entry-point.md)).
+
 ## Privacy by design
 
 - No cookies. The visit id lives in `sessionStorage` and ends with the tab.
@@ -272,7 +310,7 @@ npm run test:cov       # unit tests in jsdom, 100% coverage required
 npm run test:tooling   # the lint rule and the scripts
 npx vitest run src/contract.test.ts   # the contract test alone
 npx vitest run property   # the property-based tests alone
-npm run test:e2e       # Chromium: the playground, the classic build, the visitor marker
+npm run test:e2e       # Chromium: the playground, both builds, automatic events, the visitor marker
 ```
 
 Coverage must stay at **100% of statements, branches, functions and lines** of `src/`; CI fails
@@ -287,8 +325,9 @@ cut between whole segments at 256 characters, a result the API's templating leav
 property sanitizing (the limits, every key kept or reported as dropped), batching (every event
 sent once, in order, within both limits), the retry delays and `Retry-After`, attribution (UTM
 limits, only the referrer's host), the visitor kind (each boundary of the day and the month, a
-marker that keeps only its two instants, garbage never read as one) and request tracking (no
-query, fragment or e-mail address in the route, the same cut at 100 characters).
+marker that keeps only its two instants, garbage never read as one), request tracking (no
+query, fragment or e-mail address in the route, the same cut at 100 characters) and automatic
+events (no query or fragment in any property, a download path within 100 characters).
 `vitest.setup.ts` fixes the seed (`20261028`) and the run count for every file, so CI, the
 pre-commit hook and a local run test the same inputs; a failure prints the seed and path that
 replay it.
@@ -298,15 +337,16 @@ replay it.
 ```text
 src/
 ├── core/        pure rules: batching, retries, session, privacy, paths, attribution, visitors, checks
-├── adapters/    browser edges: transport, storage, navigation, page lifecycle, ids
+├── adapters/    browser edges: transport, storage, navigation, page lifecycle, ids, DOM events
 ├── tracker.ts   the queue, the session and the timers
 ├── page-views.ts automatic page views
+├── auto.ts      pyxis-analytics/auto: outbound links, downloads and forms
 └── index.ts     the public API
 contract/        literal copy of pyxis-api's OpenAPI document (npm run contract:sync)
 eslint-rules/    the local no-comments ESLint rule
 scripts/         comment check, size budget, contract sync, playground build and server
 playground/      the dry-run playground published on GitHub Pages
-e2e/             Playwright test of the playground
+e2e/             Playwright tests of the playground and the built entry points
 docs/adr/        architecture decision records
 ```
 
@@ -330,6 +370,7 @@ against the upstream document, so a breaking change in the API shows up here the
 | [0006](docs/adr/0006-stop-after-a-refused-batch.md)    | Send nothing more after a refused batch          |
 | [0007](docs/adr/0007-classic-script-build.md)          | A classic script build that sets `window.pyxis`  |
 | [0008](docs/adr/0008-visitor-period-marker.md)         | Tell a visit's kind from a period marker         |
+| [0009](docs/adr/0009-automatic-events-entry-point.md)  | Automatic events in their own entry point        |
 
 ## Roadmap
 
