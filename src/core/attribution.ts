@@ -37,9 +37,13 @@ function readUtm(parameters: URLSearchParams): Utm | undefined {
   return entries.length === 0 ? undefined : Object.fromEntries(entries);
 }
 
+export function bareHost(hostname: string): string {
+  return hostname.toLowerCase().replace(WWW_PREFIX, '');
+}
+
 function hostOf(url: string): string | undefined {
   try {
-    return new URL(url).hostname.toLowerCase().replace(WWW_PREFIX, '');
+    return bareHost(new URL(url).hostname);
   } catch {
     return undefined;
   }
@@ -51,7 +55,7 @@ function referrerHost(referrer: string | undefined, ownHost: string): string | u
     host !== undefined &&
     host.length <= MAX_REFERRER_HOST_LENGTH &&
     HOSTNAME_PATTERN.test(host) &&
-    host !== ownHost.toLowerCase().replace(WWW_PREFIX, '');
+    host !== bareHost(ownHost);
   return isUsable ? host : undefined;
 }
 
