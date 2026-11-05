@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.8.0](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.7.1...v0.8.0) (2026-11-05)
+
+
+### Features
+
+* **adapters:** listen to link activations and form submissions ([0329358](https://github.com/samuelcsantana/pyxis-sdk/commit/0329358cb96e53774a70a0c0444af2a7e044e35a))
+* add the pyxis-analytics/auto entry point ([d628c68](https://github.com/samuelcsantana/pyxis-sdk/commit/d628c680ab398209697b0ece1e0aa1d35852f11e))
+* **core:** decide outbound link, download and form events ([122d5ee](https://github.com/samuelcsantana/pyxis-sdk/commit/122d5ee9f1fce72d599bfa193754defe2b35fc91))
+* **playground:** show the automatic events ([c90d6fd](https://github.com/samuelcsantana/pyxis-sdk/commit/c90d6fd9196656f7c1613c5b301e08dc3e02910f))
+
+
+### Refactoring
+
+* **core:** share the bare host normalization ([f6e0640](https://github.com/samuelcsantana/pyxis-sdk/commit/f6e0640d37a015e8b96a9765b1cb6038d487a435))
+
+
+### Documentation
+
+* document automatic events and record ADR 0009 ([caf9151](https://github.com/samuelcsantana/pyxis-sdk/commit/caf9151165186dd8c6c031d9bbf2ae748d86899a))
+
 ## [0.7.1](https://github.com/samuelcsantana/pyxis-sdk/compare/v0.7.0...v0.7.1) (2026-11-03)
 
 
