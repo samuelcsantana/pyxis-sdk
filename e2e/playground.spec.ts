@@ -64,6 +64,13 @@ test('shows the batches it would send, valid against the API contract, and sends
   expect(text).not.toContain('8213');
   expect(text).not.toContain('Te5t-123');
   expect(text).toContain('order_number_in_use');
+  expect(text).toContain('"outbound_link_clicked"');
+  expect(text).toContain('"domain":"github.com"');
+  expect(text).toContain('"file_path":"/files/:id/price-list.pdf"');
+  expect(text).toContain('"form":"newsletter"');
+  expect(text).not.toContain('ref=playground');
+  expect(text).not.toContain('Dem0Sig');
+  expect(text).not.toContain('ana.demo');
   expect(requests.filter((url) => !url.startsWith(baseURL ?? ''))).toEqual([]);
 });
 

@@ -10,5 +10,8 @@ export async function exercise(page: Page): Promise<void> {
   await page.getByRole('button', { name: "identify('u_demo_42')" }).click();
   await page.getByRole('button', { name: 'trackRequest POST 201' }).click();
   await page.getByRole('button', { name: 'trackRequest POST 409' }).click();
+  await page.getByRole('link', { name: 'Visit the repository on GitHub' }).click();
+  await page.getByRole('link', { name: 'Download price-list.pdf' }).click();
+  await page.getByRole('button', { name: 'Subscribe' }).click();
   await page.clock.runFor(FLUSH_DELAY_MS);
 }
