@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   allWithinBudget,
-  BUNDLE_FILES,
+  AUTO_EVENTS_BUDGET_BYTES,
+  BUNDLES,
   gzippedSize,
   reportBundles,
   reportSize,
@@ -51,23 +52,57 @@ describe('reportSize', () => {
   it('sets the budget at 6 KB', () => {
     assert.equal(SIZE_BUDGET_BYTES, 6144);
   });
+
+  it('sets the automatic events budget at 2 KB', () => {
+    assert.equal(AUTO_EVENTS_BUDGET_BYTES, 2048);
+  });
 });
 
 describe('reportBundles', () => {
-  it('checks the module build and the classic script build', () => {
-    assert.deepEqual(BUNDLE_FILES, ['dist/index.js', 'dist/pyxis.global.js']);
+  it('checks the module build and the classic script build against 6 KB, automatic events against 2 KB', () => {
+    assert.deepEqual(BUNDLES, [
+      { file: 'dist/index.js', budget: SIZE_BUDGET_BYTES },
+      { file: 'dist/pyxis.global.js', budget: SIZE_BUDGET_BYTES },
+      { file: 'dist/auto.js', budget: AUTO_EVENTS_BUDGET_BYTES },
+    ]);
   });
 
   it('reports every file, in order, each measured from its own content', () => {
     const budget = gzippedSize(SMALL_BUNDLE);
     const read = readFrom({ 'small.js': SMALL_BUNDLE, 'large.js': LARGE_BUNDLE });
 
-    const reports = reportBundles(['small.js', 'large.js'], read, budget);
+    const reports = reportBundles(
+      [
+        { file: 'small.js', budget },
+        { file: 'large.js', budget },
+      ],
+      read,
+    );
 
     assert.deepEqual(reports, [
       reportSize('small.js', budget, budget),
       reportSize('large.js', gzippedSize(LARGE_BUNDLE), budget),
     ]);
+    assert.deepEqual(
+      reports.map((report) => report.withinBudget),
+      [true, false],
+    );
+  });
+});
+
+describe('reportBundles with budgets of their own', () => {
+  it('holds each file to its own budget', () => {
+    const size = gzippedSize(LARGE_BUNDLE);
+    const read = readFrom({ 'core.js': LARGE_BUNDLE, 'addon.js': LARGE_BUNDLE });
+
+    const reports = reportBundles(
+      [
+        { file: 'core.js', budget: size },
+        { file: 'addon.js', budget: size - 1 },
+      ],
+      read,
+    );
+
     assert.deepEqual(
       reports.map((report) => report.withinBudget),
       [true, false],

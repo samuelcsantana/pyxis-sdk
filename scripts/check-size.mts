@@ -1,8 +1,19 @@
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
-export const BUNDLE_FILES = ['dist/index.js', 'dist/pyxis.global.js'] as const;
 export const SIZE_BUDGET_BYTES = 6 * 1024;
+export const AUTO_EVENTS_BUDGET_BYTES = 2 * 1024;
+
+export interface Bundle {
+  readonly file: string;
+  readonly budget: number;
+}
+
+export const BUNDLES: readonly Bundle[] = [
+  { file: 'dist/index.js', budget: SIZE_BUDGET_BYTES },
+  { file: 'dist/pyxis.global.js', budget: SIZE_BUDGET_BYTES },
+  { file: 'dist/auto.js', budget: AUTO_EVENTS_BUDGET_BYTES },
+];
 
 export interface SizeReport {
   readonly withinBudget: boolean;
@@ -23,11 +34,10 @@ export function reportSize(file: string, size: number, budget: number): SizeRepo
 }
 
 export function reportBundles(
-  files: readonly string[],
+  bundles: readonly Bundle[],
   read: (file: string) => Uint8Array,
-  budget: number,
 ): readonly SizeReport[] {
-  return files.map((file) => reportSize(file, gzippedSize(read(file)), budget));
+  return bundles.map(({ file, budget }) => reportSize(file, gzippedSize(read(file)), budget));
 }
 
 export function allWithinBudget(reports: readonly SizeReport[]): boolean {
@@ -35,7 +45,7 @@ export function allWithinBudget(reports: readonly SizeReport[]): boolean {
 }
 
 function main(): void {
-  const reports = reportBundles(BUNDLE_FILES, (file) => readFileSync(file), SIZE_BUDGET_BYTES);
+  const reports = reportBundles(BUNDLES, (file) => readFileSync(file));
   for (const report of reports) {
     console.log(report.message);
   }
