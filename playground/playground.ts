@@ -1,3 +1,4 @@
+import { autoEvents } from '../src/auto.js';
 import {
   type Batch,
   identify,
@@ -102,6 +103,15 @@ init({
   pathRules: ['/orders/:id'],
   debug: { dryRun: true, onBatch: showBatch },
 });
+
+autoEvents({ outboundLinks: true, fileDownloads: true, formSubmits: true });
+
+for (const element of document.querySelectorAll<HTMLElement>('[data-stay]')) {
+  const stayOnThePage = (event: Event): void => {
+    event.preventDefault();
+  };
+  element.addEventListener(element instanceof HTMLFormElement ? 'submit' : 'click', stayOnThePage);
+}
 
 for (const button of document.querySelectorAll<HTMLButtonElement>('button[data-path]')) {
   button.addEventListener('click', () => {
